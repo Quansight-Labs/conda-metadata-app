@@ -1,0 +1,6 @@
+[browser]
+gatherUsageStats = false
+
+[logger]
+level = "debug"
+

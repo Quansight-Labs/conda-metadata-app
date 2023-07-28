@@ -1,3 +1,6 @@
+from logging import basicConfig
+basicConfig(level="DEBUG")
+
 import streamlit as st
 from conda_forge_metadata.oci import get_oci_artifact_data
 
