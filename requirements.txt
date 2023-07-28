@@ -1,2 +1,2 @@
 https://github.com/regro/conda-forge-metadata/archive/refs/tags/0.5.0.tar.gz
-https://github.com/channel-mirrors/conda-oci-mirror/archive/refs/tags/v0.1.0.tar.gz
+git+https://github.com/channel-mirrors/conda-oci-mirror.git@v0.1.0
