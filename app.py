@@ -1,5 +1,10 @@
-from logging import basicConfig
-basicConfig(level="DEBUG")
+import os
+from tempfile import mkdtemp
+
+if not os.environ.get("CACHE_DIR"):
+    from conda_oci_mirror import defaults
+    
+    os.environ["CACHE_DIR"] = defaults.CACHE_DIR = mkdtemp(suffix="conda-oci-mirror-cache")
 
 import streamlit as st
 from conda_forge_metadata.oci import get_oci_artifact_data
