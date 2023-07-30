@@ -1,103 +1,16 @@
-import json
 import os
-import re
-from tempfile import mkdtemp
-from typing import List, Dict, Any, Union, Tuple
+from tempfile import gettempdir
 
 if not os.environ.get("CACHE_DIR"):
     from conda_oci_mirror import defaults
 
-    os.environ["CACHE_DIR"] = defaults.CACHE_DIR = mkdtemp(
-        suffix="conda-oci-mirror-cache"
+    os.environ["CACHE_DIR"] = defaults.CACHE_DIR = os.path.join(
+        gettempdir(), "conda-oci-mirror-cache"
     )
 
 import requests
 import streamlit as st
 from conda_forge_metadata.oci import get_oci_artifact_data
-
-from st_route import st_route
-
-
-@st_route(path=r"meta/(.*)", globally=True)
-def any_name(
-    path_args: List[str],
-    path_kwargs: Dict[str, Any],
-    method: str,
-    body: bytes,
-    arguments: Dict[str, Any],
-) -> Union[
-    int,
-    bytes,
-    str,
-    Tuple[int, Union[bytes, str]],
-    Tuple[int, Union[bytes, str], Dict[str, Any]],
-]:
-    """
-    path_args: path regex unnamed groups
-    path_kwargs: path regex named groups
-    method: HTTP method
-    body: the request body in bytes
-    arguments: The query and body arguments
-
-    returns with any of the followings:
-      int: HTTP response code
-      bytes/str: HTTP 200 with body. str encoded with python default
-      Tuple[int, bytes/str]: HTTP response code with body
-      Tuple[int, bytes/str, Dict[str, Any]]: HTTP response code with body and additional headers
-
-    If you don't need any of the arguments, just use **kwargs.
-    """
-    query = path_args[0].decode()
-    fields = re.match(r"(?P<channel>\S+)/(?P<subdir>\S+)/(?P<artifact>\S+)", query)
-    if not fields:
-        return (
-            400,
-            "{'ok': false, 'resp': 'Bad request. Use `meta/<channel>/<subdir>/<artifact.extension>`.'}",
-            {"Content-Type": "application/json"},
-        )
-    channel = fields["channel"]
-    if len(channel) > 50:
-        return (
-            400,
-            "{'ok': false, 'resp': 'Channel name too long'}",
-            {"Content-Type": "application/json"},
-        )
-    subdir = fields["subdir"]
-    if len(subdir) > 20:
-        return (
-            400,
-            "{'ok': false, 'resp': 'Subdir name too long'}",
-            {"Content-Type": "application/json"},
-        )
-    artifact = fields["artifact"]
-    if len(artifact) > 100:
-        return (
-            400,
-            "{'ok': false, 'resp': 'Artifact name too long'}",
-            {"Content-Type": "application/json"},
-        )
-    if not artifact.endswith(".conda") and not artifact.endswith(".tar.bz2"):
-        return (
-            400,
-            "{'ok': false, 'resp': 'Artifact extension not supported. Use .conda or .tar.bz2.'}",
-            {"Content-Type": "application/json"},
-        )
-    data = get_oci_artifact_data(
-        channel=channel,
-        subdir=subdir,
-        artifact=artifact,
-    )
-    if data:
-        return (
-            200,
-            json.dumps({"resp": data, "ok": True}),
-            {"Content-Type": "application/json"},
-        )
-    return (
-        404,
-        "{'ok': false, 'resp': 'No data returned'}",
-        {"Content-Type": "application/json"},
-    )
 
 
 @st.cache_data
@@ -169,7 +82,14 @@ def extensions(package_name, subdir, version, build, channel="conda-forge"):
 
 
 with st.sidebar:
-    st.title("conda metadata browser")
+    st.title(
+        "conda metadata browser",
+        help="Web UI to browse the conda package metadata exposed at "
+        "https://github.com/orgs/channel-mirrors/packages.\n\n "
+        "If you need programmatic usage, check the [REST API]"
+        "(https://condametadata-1-n5494491.deta.app).",
+
+    )
     channel = st.selectbox("Select a channel:", ["conda-forge", "bioconda"])
     with st.spinner("Fetching package names..."):
         package_name = st.selectbox(
@@ -202,9 +122,10 @@ with st.sidebar:
     )
     with st.expander("Advanced mode"):
         advanced = st.text_input(
-            "Use `channel/subdir::package_name-version-build.ext`",
+            "Enter a full artifact identifier:",
             placeholder="conda-forge/linux-64::conda-forge-ci-setup-3.32.5-py39hb2a8d07_100.conda",
-            key="advanced",
+            help="The syntax is `channel/subdir::package_name-version-build.ext`.\n\n"
+            "Example: `conda-forge/linux-64::conda-forge-ci-setup-3.32.5-py39hb2a8d07_100.conda`",
         )
         submitted_adv = st.button("Query", key="adv", disabled=not advanced)
 
