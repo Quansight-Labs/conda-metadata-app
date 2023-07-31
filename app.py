@@ -38,11 +38,40 @@ def channeldata(channel="conda-forge"):
     return r.json()
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=100)
+@st.cache_data(ttl=TWO_HOURS, max_entries=1000)
 def api_data(package_name, channel="conda-forge"):
     r = requests.get(f"https://api.anaconda.org/package/{channel}/{package_name}/files")
     r.raise_for_status()
     return r.json()
+
+
+@st.cache_data(ttl=ONE_DAY, max_entries=1000)
+def repodata_patches(channel="conda-forge"):
+    package_name = f"{channel}-repodata-patches"
+    data = api_data(package_name, channel)
+    most_recent = sorted(data, key=lambda x: x["attrs"]["timestamp"], reverse=True)[0]
+    filename, conda = conda_reader_for_url(f"https:{most_recent['download_url']}")
+
+    patches = {}
+    with closing(conda):
+        for tar, member in stream_conda_component(filename, conda, component="pkg"):
+            if member.name.endswith("patch_instructions.json"):
+                patches[member.name.split("/")[0]] = json.load(tar.extractfile(member))
+    return patches
+
+
+@st.cache_data(ttl=ONE_DAY, max_entries=1000)
+def feedstock_url(package_name, channel="conda-forge"):
+    if not package_name:
+        return ""
+    if channel == "conda-forge":
+        feedstocks = package_to_feedstock(package_name)
+        return [f"https://github.com/conda-forge/{f}-feedstock" for f in feedstocks]
+    elif channel == "bioconda":
+        return [
+            f"https://github.com/bioconda/bioconda-recipes/tree/master/recipes/{package_name}"
+        ]
+    return ""
 
 
 @st.cache_data(ttl=TWO_HOURS, max_entries=10, show_spinner=False)
@@ -108,35 +137,6 @@ def extensions(package_name, subdir, version, build, channel="conda-forge"):
             and pkg["attrs"]["build"] == build
         }
     )
-
-
-@st.cache_data(ttl=ONE_DAY, max_entries=100)
-def feedstock_url(package_name, channel="conda-forge"):
-    if not package_name:
-        return ""
-    if channel == "conda-forge":
-        feedstocks = package_to_feedstock(package_name)
-        return [f"https://github.com/conda-forge/{f}-feedstock" for f in feedstocks]
-    elif channel == "bioconda":
-        return [
-            f"https://github.com/bioconda/bioconda-recipes/tree/master/recipes/{package_name}"
-        ]
-    return ""
-
-
-@st.cache_data(ttl=ONE_DAY, max_entries=10)
-def repodata_patches(channel="conda-forge"):
-    package_name = f"{channel}-repodata-patches"
-    data = api_data(package_name, channel)
-    most_recent = sorted(data, key=lambda x: x["attrs"]["timestamp"], reverse=True)[0]
-    filename, conda = conda_reader_for_url(f"https:{most_recent['download_url']}")
-
-    patches = {}
-    with closing(conda):
-        for tar, member in stream_conda_component(filename, conda, component="pkg"):
-            if member.name.endswith("patch_instructions.json"):
-                patches[member.name.split("/")[0]] = json.load(tar.extractfile(member))
-    return patches
 
 
 @st.cache_data(ttl=ONE_DAY, max_entries=100, show_spinner=False)
