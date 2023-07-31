@@ -1,8 +1,11 @@
+import json
 import os
 import re
+from contextlib import closing
+from datetime import datetime
+from difflib import unified_diff
 from inspect import cleandoc
 from tempfile import gettempdir
-from datetime import datetime
 
 if not os.environ.get("CACHE_DIR"):
     from conda_oci_mirror import defaults
@@ -13,14 +16,17 @@ if not os.environ.get("CACHE_DIR"):
 
 import requests
 import streamlit as st
-
 from conda_forge_metadata.oci import get_oci_artifact_data
 from conda_forge_metadata.feedstock_outputs import package_to_feedstock
+from conda_package_streaming.package_streaming import stream_conda_component
+from conda_package_streaming.url import conda_reader_for_url
 from streamlit.logger import get_logger
 
 from version_order import VersionOrder
 
+
 logger = get_logger(__name__)
+st.set_page_config(page_title="conda metadata browser")
 
 
 @st.cache_data
@@ -116,6 +122,21 @@ def feedstock_url(package_name, channel="conda-forge"):
     return ""
 
 
+@st.cache_data
+def repodata_patches(channel="conda-forge"):
+    package_name = f"{channel}-repodata-patches"
+    data = api_data(package_name, channel)
+    most_recent = sorted(data, key=lambda x: x["attrs"]["timestamp"], reverse=True)[0]
+    filename, conda = conda_reader_for_url(f"https:{most_recent['download_url']}")
+
+    patches = {}
+    with closing(conda):
+        for tar, member in stream_conda_component(filename, conda, component="pkg"):
+            if member.name.endswith("patch_instructions.json"):
+                patches[member.name.split("/")[0]] = json.load(tar.extractfile(member))
+    return patches
+
+
 url_params = st.experimental_get_query_params()
 channel, subdir, artifact, package_name, version, build, ext = [None] * 7
 bad_url = False
@@ -202,6 +223,7 @@ with st.sidebar:
                 extensions(package_name, subdir, version, build, channel), ext
             ),
         )
+        with_patches = st.checkbox("Show patches and broken packages", value=False)
 
 
 def input_value_so_far():
@@ -229,6 +251,15 @@ def disable_button(query):
     if all([channel, subdir, package_name, version, build, extension]):
         return False
     return True
+
+
+@st.cache_data
+def patched_repodata(channel, subdir, artifact):
+    patches = repodata_patches(channel)[subdir]
+    key = "packages.conda" if artifact.endswith(".conda") else "packages"
+    patched_data = patches[key].get(artifact, {})
+    yanked = artifact in patches["remove"]
+    return patched_data, yanked
 
 
 c1, c2 = st.columns([1, 0.25])
@@ -284,10 +315,21 @@ if data:
     except Exception as exc:
         logger.error(exc, exc_info=True)
 
+    if with_patches:
+        patched_data, yanked = patched_repodata(channel, subdir, artifact)
+    else:
+        patched_data, yanked = {}, False
+
+    st.markdown(
+        f'## {"❌ " if yanked else ""}{data["name"]} {data["version"]}',
+    )
+    if yanked:
+        st.error(
+            "This artifact has been removed from the index and it's only available via URL."
+        )
     st.write(
         cleandoc(
             f"""
-            ## {data["name"]} {data["version"]}
             > {" ".join(data.get("about", {}).get("summary", "N/A").splitlines())}
 
             | **Channel** | **Subdir** | **Build** | **Extension** |
@@ -303,17 +345,18 @@ if data:
     constraints = data.get("index", {}).get("constrains", ())
     if dependencies or constraints:
         c1, c2 = st.columns([1, 1])
-        with c1:
-            st.write("### Dependencies")
-            deps = "\n".join(dependencies)
-            if deps:
-                st.code(deps, language="text", line_numbers=True)
-
-        with c2:
-            st.write("### Constraints")
-            deps = "\n".join(constraints)
-            if deps:
-                st.code(deps, language="text", line_numbers=True)
+        for title, key, specs, col in [
+            ("Dependencies", "depends", dependencies, c1),
+            ("Constraints", "constrains", constraints, c2),
+        ]:
+            with col:
+                st.write(f"### {title}")
+                patched_specs = patched_data.get(key, {})
+                if patched_specs:
+                    specs = list(unified_diff(specs, patched_specs, n=100))[3:]
+                specs = "\n".join([s.strip() for s in specs])
+                if specs:
+                    st.code(specs, language="diff", line_numbers=True)
 
         st.markdown(" ")
 
