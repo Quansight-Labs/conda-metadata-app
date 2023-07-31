@@ -151,7 +151,11 @@ if bad_url:
         "Use syntax `/?q=channel/subdir/package_name-version-build.extension`."
     )
         
-
+def index_or_0(iterable, value):
+    for i, v in enumerate(iterable):
+        if v == value:
+            return i
+    return 0
 
 with st.sidebar:
     st.title(
@@ -167,27 +171,27 @@ with st.sidebar:
         package_name = st.selectbox(
             "Enter a package name:",
             options=package_names(channel),
-            index=package_names(channel).index(package_name) if package_name else 0,
+            index=index_or_0(package_names(channel), package_name),
         )
         subdir = st.selectbox(
             "Select a subdir:",
             options=subdirs(package_name, channel),
-            index=subdirs(package_name, channel).index(subdir) if subdir else 0,
+            index=index_or_0(subdirs(package_name, channel), subdir),
         )
         version = st.selectbox(
             "Select a version:",
             options=versions(package_name, subdir, channel),
-            index=versions(package_name, subdir, channel).index(version) if version else 0,
+            index=index_or_0(versions(package_name, subdir, channel), version),
         )
         build = st.selectbox(
             "Select a build:",
             options=builds(package_name, subdir, version, channel),
-            index=builds(package_name, subdir, version, channel).index(build) if build else 0,
+            index=index_or_0(builds(package_name, subdir, version, channel), build),
         )
         extension = st.selectbox(
             "Select an extension:",
             options=extensions(package_name, subdir, version, build, channel),
-            index=extensions(package_name, subdir, version, build, channel).index(ext) if ext else 0,
+            index=index_or_0(extensions(package_name, subdir, version, build, channel), ext),
         )
 
 
@@ -235,6 +239,7 @@ with c2:
     )
 
 if submitted or all([channel, subdir, package_name, version, build, extension]):
+    st.experimental_set_query_params(q=f"{channel}/{subdir}/{package_name}-{version}-{build}.{extension}")
     with st.spinner("Fetching metadata..."):
         channel_subdir, artifact = query.split("::")
         channel, subdir = channel_subdir.split("/", 1)
