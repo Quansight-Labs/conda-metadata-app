@@ -31,21 +31,21 @@ ONE_DAY = 60 * 60 * 24
 TWO_HOURS = 60 * 60 * 4
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=10)
+@st.cache_data(ttl=TWO_HOURS, max_entries=100)
 def channeldata(channel="conda-forge"):
     r = requests.get(f"https://conda.anaconda.org/{channel}/channeldata.json")
     r.raise_for_status()
     return r.json()
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=1000)
+@st.cache_data(ttl=TWO_HOURS, max_entries=100)
 def api_data(package_name, channel="conda-forge"):
     r = requests.get(f"https://api.anaconda.org/package/{channel}/{package_name}/files")
     r.raise_for_status()
     return r.json()
 
 
-@st.cache_data(ttl=ONE_DAY, max_entries=1000)
+@st.cache_data(ttl=ONE_DAY, max_entries=2)
 def repodata_patches(channel="conda-forge"):
     package_name = f"{channel}-repodata-patches"
     data = api_data(package_name, channel)
@@ -74,6 +74,7 @@ def feedstock_url(package_name, channel="conda-forge"):
     return ""
 
 
+@st.cache_data(show_spinner=False)
 def package_names(channel="conda-forge"):
     return "", *sorted(
         channeldata(channel)["packages"].keys(),
@@ -81,12 +82,14 @@ def package_names(channel="conda-forge"):
     )
 
 
+@st.cache_data(show_spinner=False)
 def subdirs(package_name, channel="conda-forge"):
     if not package_name:
         return []
     return sorted(channeldata(channel)["packages"][package_name]["subdirs"])
 
 
+@st.cache_data(show_spinner=False)
 def versions(package_name, subdir, channel="conda-forge"):
     if not package_name or not subdir:
         return []
@@ -102,6 +105,7 @@ def versions(package_name, subdir, channel="conda-forge"):
     )
 
 
+@st.cache_data(show_spinner=False)
 def builds(package_name, subdir, version, channel="conda-forge"):
     if not package_name or not subdir or not version:
         return []
@@ -119,6 +123,7 @@ def builds(package_name, subdir, version, channel="conda-forge"):
     ]
 
 
+@st.cache_data(show_spinner=False)
 def extensions(package_name, subdir, version, build, channel="conda-forge"):
     if not package_name or not subdir or not version or not build:
         return []
@@ -134,6 +139,7 @@ def extensions(package_name, subdir, version, build, channel="conda-forge"):
     )
 
 
+@st.cache_data(show_spinner=False)
 def patched_repodata(channel, subdir, artifact):
     patches = repodata_patches(channel)[subdir]
     key = "packages.conda" if artifact.endswith(".conda") else "packages"
@@ -142,51 +148,64 @@ def patched_repodata(channel, subdir, artifact):
     return patched_data, yanked
 
 
-url_params = st.experimental_get_query_params()
-channel, subdir, artifact, package_name, version, build, ext = [None] * 7
-bad_url = False
-if "q" in url_params:
-    query = url_params["q"][0]
-    try:
-        channel, subdir, artifact = query.rsplit("/", 2)
-    except Exception as exc:
-        logger.error(exc)
-        bad_url = True
-    else:
-        if artifact:
-            if artifact.endswith(".conda"):
-                ext = "conda"
-            elif artifact.endswith(".tar.bz2"):
-                ext = "tar.bz2"
-            else:
-                ext = None
-                channel, subdir, artifact = [None] * 3
-                bad_url = True
-            if ext:
-                try:
-                    package_name, version, build = artifact[: -len(f".{ext}")].rsplit(
-                        "-", 2
-                    )
-                except Exception as exc:
-                    logger.error(exc)
-                    bad_url = True
-elif url_params:
-    bad_url = True
+def parse_url_params():
+    channel, subdir, artifact, package_name, version, build, extension = [None] * 7
+    url_params = st.experimental_get_query_params()
+    ok = True
+    if "q" in url_params:
+        query = url_params["q"][0]
+        try:
+            channel, subdir, artifact = query.rsplit("/", 2)
+        except Exception as exc:
+            logger.error(exc)
+            ok = False
+        else:
+            if artifact:
+                if artifact.endswith(".conda"):
+                    extension = "conda"
+                elif artifact.endswith(".tar.bz2"):
+                    extension = "tar.bz2"
+                else:
+                    extension = None
+                    channel, subdir, artifact = [None] * 3
+                    ok = False
+                if extension:
+                    try:
+                        package_name, version, build = artifact[
+                            : -len(f".{extension}")
+                        ].rsplit("-", 2)
+                    except Exception as exc:
+                        logger.error(exc)
+                        ok = False
+    elif url_params:
+        ok = False
+    return {
+        "channel": channel,
+        "subdir": subdir,
+        "artifact": artifact,
+        "package_name": package_name,
+        "version": version,
+        "build": build,
+        "extension": extension,
+    }, ok
 
-if bad_url:
+
+url_params, url_ok = parse_url_params()
+if not url_ok:
     st.experimental_set_query_params()
     st.error(
         f"Invalid URL params: `{url_params}`.\n\n"
         "Use syntax `/?q=channel/subdir/package_name-version-build.extension`."
     )
-
-
-def index_or_0(iterable, value):
-    for i, v in enumerate(iterable):
-        if v == value:
-            return i
-    return 0
-
+elif url_params["artifact"] and "channel" not in st.session_state:
+    # Initialize state from URL params, only on first run
+    # These state keys match the sidebar widgets keys below
+    st.session_state.channel = url_params["channel"]
+    st.session_state.subdir = url_params["subdir"]
+    st.session_state.package_name = url_params["package_name"]
+    st.session_state.version = url_params["version"]
+    st.session_state.build = url_params["build"]
+    st.session_state.extension = url_params["extension"]
 
 with st.sidebar:
     st.title(
@@ -196,38 +215,41 @@ with st.sidebar:
         "If you need programmatic usage, check the [REST API]"
         "(https://condametadata-1-n5494491.deta.app).",
     )
-    channels = ["conda-forge", "bioconda"]
     channel = st.selectbox(
-        "Select a channel:", channels, index=channels.index(channel) if channel else 0
+        "Select a channel:",
+        ["conda-forge", "bioconda"],
+        key="channel",
     )
     package_name = st.selectbox(
         "Enter a package name:",
         options=package_names(channel),
-        index=index_or_0(package_names(channel), package_name),
+        key="package_name",
     )
     subdir = st.selectbox(
         "Select a subdir:",
         options=subdirs(package_name, channel),
-        index=index_or_0(subdirs(package_name, channel), subdir),
+        key="subdir",
     )
     version = st.selectbox(
         "Select a version:",
         options=versions(package_name, subdir, channel),
-        index=index_or_0(versions(package_name, subdir, channel), version),
+        key="version",
     )
     build = st.selectbox(
         "Select a build:",
         options=builds(package_name, subdir, version, channel),
-        index=index_or_0(builds(package_name, subdir, version, channel), build),
+        key="build",
     )
     extension = st.selectbox(
         "Select an extension:",
         options=extensions(package_name, subdir, version, build, channel),
-        index=index_or_0(
-            extensions(package_name, subdir, version, build, channel), ext
-        ),
+        key="extension",
     )
-    with_patches = st.checkbox("Show patches and broken packages", value=False)
+    with_patches = st.checkbox(
+        "Show patches and broken packages",
+        value=False,
+        key="with_patches",
+    )
 
 
 def input_value_so_far():
@@ -264,6 +286,7 @@ with c1:
         placeholder="channel/subdir::package_name-version-build.ext",
         value=input_value_so_far(),
         label_visibility="collapsed",
+        key="query_input",
     )
 with c2:
     submitted = st.button(
@@ -274,12 +297,10 @@ with c2:
     )
 
 if submitted or all([channel, subdir, package_name, version, build, extension]):
-    st.experimental_set_query_params(
-        q=f"{channel}/{subdir}/{package_name}-{version}-{build}.{extension}"
-    )
+    channel_subdir, artifact = query.split("::")
+    channel, subdir = channel_subdir.split("/", 1)
+    st.experimental_set_query_params(q=f"{channel}/{subdir}/{artifact}")
     with st.spinner("Fetching metadata..."):
-        channel_subdir, artifact = query.split("::")
-        channel, subdir = channel_subdir.split("/", 1)
         data = get_oci_artifact_data(
             channel=channel,
             subdir=subdir,
