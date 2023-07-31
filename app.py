@@ -58,7 +58,11 @@ def versions(package_name, subdir, channel="conda-forge"):
         return []
     data = api_data(package_name, channel)
     return sorted(
-        {pkg["version"]: None for pkg in data if pkg["attrs"]["subdir"] == subdir},
+        {
+            pkg["version"]: None
+            for pkg in data
+            if pkg["attrs"]["subdir"] == subdir and "main" in pkg["labels"]
+        },
         key=VersionOrder,
         reverse=True,
     )
@@ -106,7 +110,9 @@ def feedstock_url(package_name, channel="conda-forge"):
         feedstocks = package_to_feedstock(package_name)
         return [f"https://github.com/conda-forge/{f}-feedstock" for f in feedstocks]
     elif channel == "bioconda":
-        return [f"https://github.com/bioconda/bioconda-recipes/tree/master/recipes/{package_name}"]
+        return [
+            f"https://github.com/bioconda/bioconda-recipes/tree/master/recipes/{package_name}"
+        ]
     return ""
 
 
@@ -190,7 +196,7 @@ with c2:
 if submitted:
     with st.spinner("Fetching metadata..."):
         channel_subdir, artifact = query.split("::")
-        channel, subdir = channel_subdir.split("/")
+        channel, subdir = channel_subdir.split("/", 1)
         data = get_oci_artifact_data(
             channel=channel,
             subdir=subdir,
@@ -211,7 +217,7 @@ if data:
             uploaded = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
     except Exception as exc:
         logger.error(exc, exc_info=True)
-    
+
     feedstocks = "N/A"
     try:
         feedstocks = []
