@@ -27,23 +27,25 @@ from version_order import VersionOrder
 
 logger = get_logger(__name__)
 st.set_page_config(page_title="conda metadata browser")
+ONE_DAY = 60 * 60 * 24
+TWO_HOURS = 60 * 60 * 4
 
 
-@st.cache_data
+@st.cache_data(ttl=TWO_HOURS, max_entries=10)
 def channeldata(channel="conda-forge"):
     r = requests.get(f"https://conda.anaconda.org/{channel}/channeldata.json")
     r.raise_for_status()
     return r.json()
 
 
-@st.cache_data
+@st.cache_data(ttl=TWO_HOURS, max_entries=100)
 def api_data(package_name, channel="conda-forge"):
     r = requests.get(f"https://api.anaconda.org/package/{channel}/{package_name}/files")
     r.raise_for_status()
     return r.json()
 
 
-@st.cache_data
+@st.cache_data(ttl=TWO_HOURS, max_entries=10, show_spinner=False)
 def package_names(channel="conda-forge"):
     return "", *sorted(
         channeldata(channel)["packages"].keys(),
@@ -51,14 +53,14 @@ def package_names(channel="conda-forge"):
     )
 
 
-@st.cache_data
+@st.cache_data(ttl=TWO_HOURS, max_entries=100, show_spinner=False)
 def subdirs(package_name, channel="conda-forge"):
     if not package_name:
         return []
     return sorted(channeldata(channel)["packages"][package_name]["subdirs"])
 
 
-@st.cache_data
+@st.cache_data(ttl=TWO_HOURS, max_entries=100, show_spinner=False)
 def versions(package_name, subdir, channel="conda-forge"):
     if not package_name or not subdir:
         return []
@@ -74,7 +76,7 @@ def versions(package_name, subdir, channel="conda-forge"):
     )
 
 
-@st.cache_data
+@st.cache_data(ttl=TWO_HOURS, max_entries=100, show_spinner=False)
 def builds(package_name, subdir, version, channel="conda-forge"):
     if not package_name or not subdir or not version:
         return []
@@ -92,7 +94,7 @@ def builds(package_name, subdir, version, channel="conda-forge"):
     ]
 
 
-@st.cache_data
+@st.cache_data(ttl=TWO_HOURS, max_entries=100, show_spinner=False)
 def extensions(package_name, subdir, version, build, channel="conda-forge"):
     if not package_name or not subdir or not version or not build:
         return []
@@ -108,7 +110,7 @@ def extensions(package_name, subdir, version, build, channel="conda-forge"):
     )
 
 
-@st.cache_data
+@st.cache_data(ttl=ONE_DAY, max_entries=100)
 def feedstock_url(package_name, channel="conda-forge"):
     if not package_name:
         return ""
@@ -122,7 +124,7 @@ def feedstock_url(package_name, channel="conda-forge"):
     return ""
 
 
-@st.cache_data
+@st.cache_data(ttl=ONE_DAY, max_entries=10)
 def repodata_patches(channel="conda-forge"):
     package_name = f"{channel}-repodata-patches"
     data = api_data(package_name, channel)
@@ -135,6 +137,15 @@ def repodata_patches(channel="conda-forge"):
             if member.name.endswith("patch_instructions.json"):
                 patches[member.name.split("/")[0]] = json.load(tar.extractfile(member))
     return patches
+
+
+@st.cache_data(ttl=ONE_DAY, max_entries=100, show_spinner=False)
+def patched_repodata(channel, subdir, artifact):
+    patches = repodata_patches(channel)[subdir]
+    key = "packages.conda" if artifact.endswith(".conda") else "packages"
+    patched_data = patches[key].get(artifact, {})
+    yanked = artifact in patches["remove"]
+    return patched_data, yanked
 
 
 url_params = st.experimental_get_query_params()
@@ -195,35 +206,34 @@ with st.sidebar:
     channel = st.selectbox(
         "Select a channel:", channels, index=channels.index(channel) if channel else 0
     )
-    with st.spinner("Fetching package names..."):
-        package_name = st.selectbox(
-            "Enter a package name:",
-            options=package_names(channel),
-            index=index_or_0(package_names(channel), package_name),
-        )
-        subdir = st.selectbox(
-            "Select a subdir:",
-            options=subdirs(package_name, channel),
-            index=index_or_0(subdirs(package_name, channel), subdir),
-        )
-        version = st.selectbox(
-            "Select a version:",
-            options=versions(package_name, subdir, channel),
-            index=index_or_0(versions(package_name, subdir, channel), version),
-        )
-        build = st.selectbox(
-            "Select a build:",
-            options=builds(package_name, subdir, version, channel),
-            index=index_or_0(builds(package_name, subdir, version, channel), build),
-        )
-        extension = st.selectbox(
-            "Select an extension:",
-            options=extensions(package_name, subdir, version, build, channel),
-            index=index_or_0(
-                extensions(package_name, subdir, version, build, channel), ext
-            ),
-        )
-        with_patches = st.checkbox("Show patches and broken packages", value=False)
+    package_name = st.selectbox(
+        "Enter a package name:",
+        options=package_names(channel),
+        index=index_or_0(package_names(channel), package_name),
+    )
+    subdir = st.selectbox(
+        "Select a subdir:",
+        options=subdirs(package_name, channel),
+        index=index_or_0(subdirs(package_name, channel), subdir),
+    )
+    version = st.selectbox(
+        "Select a version:",
+        options=versions(package_name, subdir, channel),
+        index=index_or_0(versions(package_name, subdir, channel), version),
+    )
+    build = st.selectbox(
+        "Select a build:",
+        options=builds(package_name, subdir, version, channel),
+        index=index_or_0(builds(package_name, subdir, version, channel), build),
+    )
+    extension = st.selectbox(
+        "Select an extension:",
+        options=extensions(package_name, subdir, version, build, channel),
+        index=index_or_0(
+            extensions(package_name, subdir, version, build, channel), ext
+        ),
+    )
+    with_patches = st.checkbox("Show patches and broken packages", value=False)
 
 
 def input_value_so_far():
@@ -251,15 +261,6 @@ def disable_button(query):
     if all([channel, subdir, package_name, version, build, extension]):
         return False
     return True
-
-
-@st.cache_data
-def patched_repodata(channel, subdir, artifact):
-    patches = repodata_patches(channel)[subdir]
-    key = "packages.conda" if artifact.endswith(".conda") else "packages"
-    patched_data = patches[key].get(artifact, {})
-    yanked = artifact in patches["remove"]
-    return patched_data, yanked
 
 
 c1, c2 = st.columns([1, 0.25])
