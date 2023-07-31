@@ -74,7 +74,6 @@ def feedstock_url(package_name, channel="conda-forge"):
     return ""
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=10, show_spinner=False)
 def package_names(channel="conda-forge"):
     return "", *sorted(
         channeldata(channel)["packages"].keys(),
@@ -82,14 +81,12 @@ def package_names(channel="conda-forge"):
     )
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=100, show_spinner=False)
 def subdirs(package_name, channel="conda-forge"):
     if not package_name:
         return []
     return sorted(channeldata(channel)["packages"][package_name]["subdirs"])
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=100, show_spinner=False)
 def versions(package_name, subdir, channel="conda-forge"):
     if not package_name or not subdir:
         return []
@@ -105,7 +102,6 @@ def versions(package_name, subdir, channel="conda-forge"):
     )
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=100, show_spinner=False)
 def builds(package_name, subdir, version, channel="conda-forge"):
     if not package_name or not subdir or not version:
         return []
@@ -123,7 +119,6 @@ def builds(package_name, subdir, version, channel="conda-forge"):
     ]
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=100, show_spinner=False)
 def extensions(package_name, subdir, version, build, channel="conda-forge"):
     if not package_name or not subdir or not version or not build:
         return []
@@ -139,7 +134,6 @@ def extensions(package_name, subdir, version, build, channel="conda-forge"):
     )
 
 
-@st.cache_data(ttl=ONE_DAY, max_entries=100, show_spinner=False)
 def patched_repodata(channel, subdir, artifact):
     patches = repodata_patches(channel)[subdir]
     key = "packages.conda" if artifact.endswith(".conda") else "packages"
