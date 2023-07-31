@@ -277,7 +277,7 @@ if data:
         cleandoc(
             f"""
             ## {data["name"]} {data["version"]}
-            > {data.get("about", {}).get("summary", "N/A")}
+            > {" ".join(data.get("about", {}).get("summary", "N/A").splitlines())}
 
             | **Channel** | **Subdir** | **Build** | **Extension** |
             | :---: | :---: | :---: | :---: |
