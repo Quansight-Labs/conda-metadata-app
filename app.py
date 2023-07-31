@@ -291,18 +291,20 @@ if data:
             st.write("### Dependencies")
             deps = "\n".join(dependencies)
             if deps:
-                st.markdown(f"```\n{deps}\n```")
+                st.code(deps, language="text", line_numbers=True)
+
         with c2:
             st.write("### Constraints")
             deps = "\n".join(constraints)
             if deps:
-                st.markdown(f"```\n{deps}\n```")
+                st.code(deps, language="text", line_numbers=True)
+
         st.markdown(" ")
 
     if data.get("files"):
         st.write("### Files")
         all_files = "\n".join(data["files"])
-        st.write(f"```\n{all_files}\n```")
+        st.code(all_files, language="text", line_numbers=True)
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
