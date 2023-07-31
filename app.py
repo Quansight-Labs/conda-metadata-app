@@ -115,6 +115,7 @@ def feedstock_url(package_name, channel="conda-forge"):
         ]
     return ""
 
+
 url_params = st.experimental_get_query_params()
 channel, subdir, artifact, package_name, version, build, ext = [None] * 7
 bad_url = False
@@ -137,7 +138,9 @@ if "q" in url_params:
                 bad_url = True
             if ext:
                 try:
-                    package_name, version, build = artifact[:-len(f".{ext}")].rsplit("-", 2)
+                    package_name, version, build = artifact[: -len(f".{ext}")].rsplit(
+                        "-", 2
+                    )
                 except Exception as exc:
                     logger.error(exc)
                     bad_url = True
@@ -150,12 +153,14 @@ if bad_url:
         f"Invalid URL params: `{url_params}`.\n\n"
         "Use syntax `/?q=channel/subdir/package_name-version-build.extension`."
     )
-        
+
+
 def index_or_0(iterable, value):
     for i, v in enumerate(iterable):
         if v == value:
             return i
     return 0
+
 
 with st.sidebar:
     st.title(
@@ -166,7 +171,9 @@ with st.sidebar:
         "(https://condametadata-1-n5494491.deta.app).",
     )
     channels = ["conda-forge", "bioconda"]
-    channel = st.selectbox("Select a channel:", channels, index=channels.index(channel) if channel else 0)
+    channel = st.selectbox(
+        "Select a channel:", channels, index=channels.index(channel) if channel else 0
+    )
     with st.spinner("Fetching package names..."):
         package_name = st.selectbox(
             "Enter a package name:",
@@ -191,7 +198,9 @@ with st.sidebar:
         extension = st.selectbox(
             "Select an extension:",
             options=extensions(package_name, subdir, version, build, channel),
-            index=index_or_0(extensions(package_name, subdir, version, build, channel), ext),
+            index=index_or_0(
+                extensions(package_name, subdir, version, build, channel), ext
+            ),
         )
 
 
@@ -239,7 +248,9 @@ with c2:
     )
 
 if submitted or all([channel, subdir, package_name, version, build, extension]):
-    st.experimental_set_query_params(q=f"{channel}/{subdir}/{package_name}-{version}-{build}.{extension}")
+    st.experimental_set_query_params(
+        q=f"{channel}/{subdir}/{package_name}-{version}-{build}.{extension}"
+    )
     with st.spinner("Fetching metadata..."):
         channel_subdir, artifact = query.split("::")
         channel, subdir = channel_subdir.split("/", 1)
