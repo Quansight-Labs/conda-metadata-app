@@ -115,6 +115,43 @@ def feedstock_url(package_name, channel="conda-forge"):
         ]
     return ""
 
+url_params = st.experimental_get_query_params()
+channel, subdir, artifact, package_name, version, build, ext = [None] * 7
+bad_url = False
+if "q" in url_params:
+    query = url_params["q"][0]
+    try:
+        channel, subdir, artifact = query.rsplit("/", 2)
+    except Exception as exc:
+        logger.error(exc)
+        bad_url = True
+    else:
+        if artifact:
+            if artifact.endswith(".conda"):
+                ext = "conda"
+            elif artifact.endswith(".tar.bz2"):
+                ext = "tar.bz2"
+            else:
+                ext = None
+                channel, subdir, artifact = [None] * 3
+                bad_url = True
+            if ext:
+                try:
+                    package_name, version, build = artifact[:-len(f".{ext}")].rsplit("-", 2)
+                except Exception as exc:
+                    logger.error(exc)
+                    bad_url = True
+elif url_params:
+    bad_url = True
+
+if bad_url:
+    st.experimental_set_query_params()
+    st.error(
+        f"Invalid URL params: `{url_params}`.\n\n"
+        "Use syntax `/?q=channel/subdir/package_name-version-build.extension`."
+    )
+        
+
 
 with st.sidebar:
     st.title(
@@ -124,29 +161,33 @@ with st.sidebar:
         "If you need programmatic usage, check the [REST API]"
         "(https://condametadata-1-n5494491.deta.app).",
     )
-    channel = st.selectbox("Select a channel:", ["conda-forge", "bioconda"])
+    channels = ["conda-forge", "bioconda"]
+    channel = st.selectbox("Select a channel:", channels, index=channels.index(channel) if channel else 0)
     with st.spinner("Fetching package names..."):
         package_name = st.selectbox(
-            "Enter a package name (e.g. `python`):",
+            "Enter a package name:",
             options=package_names(channel),
-            index=0,
+            index=package_names(channel).index(package_name) if package_name else 0,
         )
         subdir = st.selectbox(
             "Select a subdir:",
             options=subdirs(package_name, channel),
-            index=0,
+            index=subdirs(package_name, channel).index(subdir) if subdir else 0,
         )
         version = st.selectbox(
-            "Select a version (e.g. `3.32.5`):",
+            "Select a version:",
             options=versions(package_name, subdir, channel),
+            index=versions(package_name, subdir, channel).index(version) if version else 0,
         )
         build = st.selectbox(
-            "Select a build (e.g. `py39hb2a8d07_100`):",
+            "Select a build:",
             options=builds(package_name, subdir, version, channel),
+            index=builds(package_name, subdir, version, channel).index(build) if build else 0,
         )
         extension = st.selectbox(
             "Select an extension:",
             options=extensions(package_name, subdir, version, build, channel),
+            index=extensions(package_name, subdir, version, build, channel).index(ext) if ext else 0,
         )
 
 
@@ -193,7 +234,7 @@ with c2:
         use_container_width=True,
     )
 
-if submitted:
+if submitted or all([channel, subdir, package_name, version, build, extension]):
     with st.spinner("Fetching metadata..."):
         channel_subdir, artifact = query.split("::")
         channel, subdir = channel_subdir.split("/", 1)
