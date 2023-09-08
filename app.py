@@ -148,6 +148,16 @@ def patched_repodata(channel, subdir, artifact):
     return patched_data, yanked
 
 
+def is_archived_feedstock(feedstock):
+    owner, repo = feedstock.split("/")[-2:]
+    if owner != "conda-forge":
+        return False
+    r = requests.get(f"https://api.github.com/repos/{owner}/{repo}")
+    if r.ok:
+        return r.json().get("archived", False)
+    return False
+
+
 def parse_url_params():
     channel, subdir, artifact, package_name, version, build, extension = [None] * 7
     url_params = st.experimental_get_query_params()
@@ -250,6 +260,14 @@ with st.sidebar:
         value=False,
         key="with_patches",
     )
+    if channel == "conda-forge":
+        mark_archived_feedstocks = st.checkbox(
+            "Mark archived feedstocks",
+            value=False,
+            key="mark_archived_feedstocks",
+        )
+    else:
+        mark_archived_feedstocks = False
 
 
 def input_value_so_far():
@@ -325,8 +343,12 @@ if data:
     feedstocks = "N/A"
     try:
         feedstocks = []
-        for f in feedstock_url(package_name, channel):
-            feedstocks.append(f"[{f.split('/')[-1]}]({f})")
+        for url in feedstock_url(package_name, channel):
+            name = url.split("/")[-1]
+            if mark_archived_feedstocks:
+                if is_archived_feedstock(url):
+                    name = f"~~{name}~~"
+            feedstocks.append(f"[{name}]({url})")
         feedstocks = ", ".join(feedstocks)
     except Exception as exc:
         logger.error(exc, exc_info=True)
