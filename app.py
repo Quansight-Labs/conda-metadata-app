@@ -365,16 +365,17 @@ if data:
         st.error(
             "This artifact has been removed from the index and it's only available via URL."
         )
+    about = data.get("about") or data.get("rendered_recipe", {}).get("about", {})
     st.write(
         cleandoc(
             f"""
-            > {" ".join(data.get("about", {}).get("summary", "N/A").splitlines())}
+            > {" ".join(about.get("summary", "N/A").splitlines())}
 
             | **Channel** | **Subdir** | **Build** | **Extension** |
             | :---: | :---: | :---: | :---: |
             | `{channel}` | `{subdir}` | `{data.get("index", {}).get("build", "N/A")}` | `{extension}` |
             | **License** | **Uploaded** | **Website** | **Recipe(s)** | 
-            | `{data.get("about", {}).get("license", "N/A")}` | {uploaded} | [Home]({data.get("about", {}).get("home", "N/A")}) | {feedstocks} |
+            | `{about.get("license", "N/A")}` | {uploaded} | [Home]({about.get("home", "N/A")}) | {feedstocks} |
             """
         )
     )
