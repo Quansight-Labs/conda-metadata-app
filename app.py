@@ -366,6 +366,7 @@ if data:
             "This artifact has been removed from the index and it's only available via URL."
         )
     about = data.get("about") or data.get("rendered_recipe", {}).get("about", {})
+    home_url = f"[Home]({about['home']})" if about.get("home") else "N/A"
     st.write(
         cleandoc(
             f"""
@@ -374,8 +375,8 @@ if data:
             | **Channel** | **Subdir** | **Build** | **Extension** |
             | :---: | :---: | :---: | :---: |
             | `{channel}` | `{subdir}` | `{data.get("index", {}).get("build", "N/A")}` | `{extension}` |
-            | **License** | **Uploaded** | **Website** | **Recipe(s)** | 
-            | `{about.get("license", "N/A")}` | {uploaded} | [Home]({about.get("home", "N/A")}) | {feedstocks} |
+            | **License** | **Uploaded** | **Website** | **Recipe(s)** |
+            | `{about.get("license", "N/A")}` | {uploaded} | {home_url} | {feedstocks} |
             """
         )
     )
