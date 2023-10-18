@@ -93,7 +93,7 @@ def subdirs(package_name, channel="conda-forge"):
 
 def _best_version_in_subdir(package_name, channel="conda-forge"):
     if not package_name:
-        return 0
+        return None, None
     return max(
         [
             (subdir, versions(package_name, subdir, channel)[0])
@@ -280,7 +280,9 @@ with st.sidebar:
     )
     # Add a small message if a newer version is available in noarch or native subdir
     if (
-        VersionOrder(_best_version) > VersionOrder(version)
+        _best_version
+        and version
+        and VersionOrder(_best_version) > VersionOrder(version)
         and _best_subdir != subdir
         and "noarch" in (_best_subdir, subdir)
     ):
