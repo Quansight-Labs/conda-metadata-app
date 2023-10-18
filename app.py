@@ -78,7 +78,6 @@ def feedstock_url(package_name, channel="conda-forge"):
     return ""
 
 
-@st.cache_data(show_spinner=False)
 def package_names(channel="conda-forge"):
     return "", *sorted(
         channeldata(channel)["packages"].keys(),
@@ -86,7 +85,6 @@ def package_names(channel="conda-forge"):
     )
 
 
-@st.cache_data(show_spinner=False)
 def subdirs(package_name, channel="conda-forge"):
     if not package_name:
         return []
@@ -120,7 +118,6 @@ def versions(package_name, subdir, channel="conda-forge"):
     )
 
 
-@st.cache_data(show_spinner=False)
 def builds(package_name, subdir, version, channel="conda-forge"):
     if not package_name or not subdir or not version:
         return []
@@ -138,7 +135,6 @@ def builds(package_name, subdir, version, channel="conda-forge"):
     ]
 
 
-@st.cache_data(show_spinner=False)
 def extensions(package_name, subdir, version, build, channel="conda-forge"):
     if not package_name or not subdir or not version or not build:
         return []
