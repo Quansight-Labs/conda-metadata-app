@@ -16,7 +16,7 @@ if not os.environ.get("CACHE_DIR"):
 
 import requests
 import streamlit as st
-from conda_forge_metadata.oci import get_oci_artifact_data
+from conda_forge_metadata.artifact_info.info_json import get_artifact_info_as_json
 from conda_forge_metadata.feedstock_outputs import package_to_feedstock
 from conda_package_streaming.package_streaming import stream_conda_component
 from conda_package_streaming.url import conda_reader_for_url
@@ -150,6 +150,24 @@ def patched_repodata(channel, subdir, artifact):
     patched_data = patches[key].get(artifact, {})
     yanked = artifact in patches["remove"]
     return patched_data, yanked
+
+
+def artifact_metadata(channel, subdir, artifact):
+    data = get_artifact_info_as_json(
+        channel=channel,
+        subdir=subdir,
+        artifact=artifact,
+        backend="oci",
+    )
+    if data or artifact.endswith(".tar.bz2"):
+        return data
+    # .conda artifacts can be streamed directly from an anaconda.org channel
+    return get_artifact_info_as_json(
+        channel=channel,
+        subdir=subdir,
+        artifact=artifact,
+        backend="streamed_artifact",
+    )
 
 
 def is_archived_feedstock(feedstock):
@@ -323,7 +341,7 @@ if submitted or all([channel, subdir, package_name, version, build, extension]):
     channel, subdir = channel_subdir.split("/", 1)
     st.experimental_set_query_params(q=f"{channel}/{subdir}/{artifact}")
     with st.spinner("Fetching metadata..."):
-        data = get_oci_artifact_data(
+        data = artifact_metadata(
             channel=channel,
             subdir=subdir,
             artifact=artifact,
