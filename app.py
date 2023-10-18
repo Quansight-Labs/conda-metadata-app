@@ -166,14 +166,14 @@ def artifact_metadata(channel, subdir, artifact):
         artifact=artifact,
         backend="oci",
     )
-    if data or artifact.endswith(".tar.bz2"):
+    if (data and data.get("name")) or artifact.endswith(".tar.bz2"):
         return data
     # .conda artifacts can be streamed directly from an anaconda.org channel
     return get_artifact_info_as_json(
         channel=channel,
         subdir=subdir,
         artifact=artifact,
-        backend="streamed_artifact",
+        backend="streamed",
     )
 
 
