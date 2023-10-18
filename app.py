@@ -26,7 +26,11 @@ from version_order import VersionOrder
 
 
 logger = get_logger(__name__)
-st.set_page_config(page_title="conda metadata browser")
+st.set_page_config(
+    page_title="conda metadata browser",
+    page_icon="📦",
+    initial_sidebar_state="expanded",
+)
 ONE_DAY = 60 * 60 * 24
 TWO_HOURS = 60 * 60 * 4
 
