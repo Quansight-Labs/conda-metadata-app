@@ -93,7 +93,18 @@ def subdirs(package_name, channel="conda-forge"):
     return sorted(channeldata(channel)["packages"][package_name]["subdirs"])
 
 
-@st.cache_data(show_spinner=False)
+def _best_version_in_subdir(package_name, channel="conda-forge"):
+    if not package_name:
+        return 0
+    return max(
+        [
+            (subdir, versions(package_name, subdir, channel)[0])
+            for subdir in subdirs(package_name, channel)
+        ],
+        key=lambda x: VersionOrder(x[1]),
+    )
+
+
 def versions(package_name, subdir, channel="conda-forge"):
     if not package_name or not subdir:
         return []
@@ -257,9 +268,13 @@ with st.sidebar:
         options=package_names(channel),
         key="package_name",
     )
+    _available_subdirs = subdirs(package_name, channel)
+    _best_subdir, _best_version = _best_version_in_subdir(package_name, channel)
+    _subdir_index = _available_subdirs.index(_best_subdir) if _best_subdir else 0
     subdir = st.selectbox(
         "Select a subdir:",
-        options=subdirs(package_name, channel),
+        options=_available_subdirs,
+        index=_subdir_index,
         key="subdir",
     )
     version = st.selectbox(
@@ -267,6 +282,17 @@ with st.sidebar:
         options=versions(package_name, subdir, channel),
         key="version",
     )
+    # Add a small message if a newer version is available in noarch or native subdir
+    if (
+        VersionOrder(_best_version) > VersionOrder(version)
+        and _best_subdir != subdir
+        and "noarch" in (_best_subdir, subdir)
+    ):
+        st.markdown(
+            f"<sup>ℹ️ v{_best_version} is available for {_best_subdir}</sup>",
+            unsafe_allow_html=True,
+        )
+
     build = st.selectbox(
         "Select a build:",
         options=builds(package_name, subdir, version, channel),
