@@ -277,18 +277,21 @@ with st.sidebar:
         options=extensions(package_name, subdir, version, build, channel),
         key="extension",
     )
-    with_patches = st.checkbox(
-        "Show patches and broken packages",
-        value=False,
-        key="with_patches",
-    )
     if channel == "conda-forge":
+        with_patches = st.checkbox(
+            "Show patches and broken packages",
+            value=False,
+            key="with_patches",
+            help="Requires extra API calls. Slow!",
+        )
         mark_archived_feedstocks = st.checkbox(
             "Mark archived feedstocks",
             value=False,
             key="mark_archived_feedstocks",
+            help="Requires extra API calls. Slow!",
         )
     else:
+        with_patches = False
         mark_archived_feedstocks = False
 
 
@@ -380,25 +383,54 @@ if data:
     else:
         patched_data, yanked = {}, False
 
-    st.markdown(
-        f'## {"❌ " if yanked else ""}{data["name"]} {data["version"]}',
-    )
+    st.markdown(f'## {"❌ " if yanked else ""}{data["name"]} {data["version"]}')
     if yanked:
         st.error(
             "This artifact has been removed from the index and it's only available via URL."
         )
     about = data.get("about") or data.get("rendered_recipe", {}).get("about", {})
-    home_url = f"[Home]({about['home']})" if about.get("home") else "N/A"
+    anaconda_org = f"[anaconda](https://anaconda.org/{channel}/{data['name']}/files?version={data['version']})"
+    ghcr_io = f"[ghcr](https://github.com/orgs/channel-mirrors/packages/container/package/{channel}%2F{subdir}%2F{data['name']})"
+    prefix_dev = (
+        f"[prefix](https://prefix.dev/channels/{channel}/packages/{data['name']})"
+    )
+    build_str = data.get("index", {}).get("build", "*N/A*")
+    if build_str == "*N/A*":
+        download = "*N/A*"
+    else:
+        download = f"[artifact download](https://conda.anaconda.org/{channel}/{subdir}/{data['name']}-{data['version']}-{build_str}.{extension})"
+    maintainers = []
+    for user in (
+        data.get("rendered_recipe", {})
+        .get("extra", {})
+        .get("recipe-maintainers", ["*N/A*"])
+    ):
+        if user == "*N/A*":
+            maintainers.append(user)
+        elif "/" in user:  # this is a team
+            org, team = user.split("/")
+            maintainers.append(f"[{user}](https://github.com/orgs/{org}/teams/{team})")
+        else:
+            maintainers.append(f"[{user}](https://github.com/{user})")
+    maintainers = ", ".join(maintainers)
+    project_urls = " · ".join(
+        [
+            f"[{url}]({about.get(url)})"
+            for url in ("home", "dev_url", "doc_url")
+            if about.get(url)
+        ]
+    )
     st.write(
         cleandoc(
             f"""
-            > {" ".join(about.get("summary", "N/A").splitlines())}
+            > {" ".join(about.get("summary", "*N/A*").splitlines())}
 
             | **Channel** | **Subdir** | **Build** | **Extension** |
             | :---: | :---: | :---: | :---: |
-            | `{channel}` | `{subdir}` | `{data.get("index", {}).get("build", "N/A")}` | `{extension}` |
-            | **License** | **Uploaded** | **Website** | **Recipe(s)** |
-            | `{about.get("license", "N/A")}` | {uploaded} | {home_url} | {feedstocks} |
+            | `{channel}` | `{subdir}` | `{build_str}` | `{extension}` |
+            | **License** | **Uploaded** | **Maintainers** | **Feedstock(s)** |
+            | `{about.get("license", "*N/A*")}` | {uploaded} | {maintainers} | {feedstocks} |
+            | **Links:** | {download} | {project_urls} | {anaconda_org} · {prefix_dev} · {ghcr_io} | 
             """
         )
     )
@@ -419,6 +451,8 @@ if data:
                 specs = "\n".join([s.strip() for s in specs])
                 if specs:
                     st.code(specs, language="diff", line_numbers=True)
+                else:
+                    st.markdown("*N/A*")
 
         st.markdown(" ")
 
