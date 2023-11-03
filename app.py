@@ -33,17 +33,23 @@ st.set_page_config(
 )
 ONE_DAY = 60 * 60 * 24
 TWO_HOURS = 60 * 60 * 4
+CHANNELS = ["conda-forge", "bioconda", "pkgs/main", "pkgs/r", "pkgs/msys2"]
 
 
 @st.cache_data(ttl=TWO_HOURS, max_entries=100)
 def channeldata(channel="conda-forge"):
-    r = requests.get(f"https://conda.anaconda.org/{channel}/channeldata.json")
+    if channel.startswith("pkgs/"):
+        r = requests.get(f"https://repo.anaconda.com/{channel}/channeldata.json")
+    else:
+        r = requests.get(f"https://conda.anaconda.org/{channel}/channeldata.json")
     r.raise_for_status()
     return r.json()
 
 
 @st.cache_data(ttl=TWO_HOURS, max_entries=100)
 def api_data(package_name, channel="conda-forge"):
+    if channel.startswith("pkgs/"):
+        channel = channel.split("/", 1)[1]
     r = requests.get(f"https://api.anaconda.org/package/{channel}/{package_name}/files")
     r.raise_for_status()
     return r.json()
@@ -75,6 +81,8 @@ def feedstock_url(package_name, channel="conda-forge"):
         return [
             f"https://github.com/bioconda/bioconda-recipes/tree/master/recipes/{package_name}"
         ]
+    elif channel.startswith("pkgs/"):
+        return [f"https://github.com/AnacondaRecipes/{package_name}-feedstock"]
     return ""
 
 
@@ -138,6 +146,8 @@ def builds(package_name, subdir, version, channel="conda-forge"):
 def extensions(package_name, subdir, version, build, channel="conda-forge"):
     if not package_name or not subdir or not version or not build:
         return []
+    if channel.startswith("pkgs/"):
+        return ["conda"]
     data = api_data(package_name, channel)
     return list(
         {
@@ -160,6 +170,13 @@ def patched_repodata(channel, subdir, artifact):
 
 
 def artifact_metadata(channel, subdir, artifact):
+    if channel.startswith("pkgs/"):
+        return get_artifact_info_as_json(
+            channel=f"https://repo.anaconda.com/{channel}",
+            subdir=subdir,
+            artifact=artifact,
+            backend="streamed",
+        )
     data = get_artifact_info_as_json(
         channel=channel,
         subdir=subdir,
@@ -256,7 +273,7 @@ with st.sidebar:
     )
     channel = st.selectbox(
         "Select a channel:",
-        ["conda-forge", "bioconda"],
+        CHANNELS,
         key="channel",
     )
     package_name = st.selectbox(
@@ -365,7 +382,7 @@ with c2:
 
 if submitted or all([channel, subdir, package_name, version, build, extension]):
     channel_subdir, artifact = query.split("::")
-    channel, subdir = channel_subdir.split("/", 1)
+    channel, subdir = channel_subdir.rsplit("/", 1)
     st.experimental_set_query_params(q=f"{channel}/{subdir}/{artifact}")
     with st.spinner("Fetching metadata..."):
         data = artifact_metadata(
@@ -413,14 +430,18 @@ if data:
             "This artifact has been removed from the index and it's only available via URL."
         )
     about = data.get("about") or data.get("rendered_recipe", {}).get("about", {})
-    anaconda_org = f"[anaconda](https://anaconda.org/{channel}/{data['name']}/files?version={data['version']})"
-    ghcr_io = f"[ghcr](https://github.com/orgs/channel-mirrors/packages/container/package/{channel}%2F{subdir}%2F{data['name']})"
-    prefix_dev = (
-        f"[prefix](https://prefix.dev/channels/{channel}/packages/{data['name']})"
-    )
+    dashboard_urls  = [f"[anaconda](https://anaconda.org/{channel.split('/', 1)[-1]}/{data['name']}/files?version={data['version']})"]
+    if not channel.startswith("pkgs/"):
+        dashboard_urls += [
+            f"[ghcr](https://github.com/orgs/channel-mirrors/packages/container/package/{channel}%2F{subdir}%2F{data['name']})",
+            f"[prefix](https://prefix.dev/channels/{channel}/packages/{data['name']})",
+        ]
+    dashboard_urls = " · ".join(dashboard_urls) 
     build_str = data.get("index", {}).get("build", "*N/A*")
     if build_str == "*N/A*":
         download = "*N/A*"
+    elif channel.startswith("pkgs/"):
+        download = f"[artifact download](https://repo.anaconda.com/{channel}/{subdir}/{data['name']}-{data['version']}-{build_str}.{extension})"
     else:
         download = f"[artifact download](https://conda.anaconda.org/{channel}/{subdir}/{data['name']}-{data['version']}-{build_str}.{extension})"
     maintainers = []
@@ -454,7 +475,7 @@ if data:
             | `{channel}` | `{subdir}` | `{build_str}` | `{extension}` |
             | **License** | **Uploaded** | **Maintainers** | **Feedstock(s)** |
             | `{about.get("license", "*N/A*")}` | {uploaded} | {maintainers} | {feedstocks} |
-            | **Links:** | {download} | {project_urls} | {anaconda_org} · {prefix_dev} · {ghcr_io} | 
+            | **Links:** | {download} | {project_urls} | {dashboard_urls} | 
             """
         )
     )
