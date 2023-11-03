@@ -71,9 +71,20 @@ def repodata_patches(channel="conda-forge"):
 
 
 @st.cache_data(ttl=ONE_DAY, max_entries=1000)
-def feedstock_url(package_name, channel="conda-forge"):
-    if not package_name:
+def provenance_urls(package_name, channel="conda-forge", data=None):
+    if not package_name or not data:
         return ""
+    if data is not None:
+        remote_url = data.get("rendered_recipe", {}).get("extra", {}).get("remote_url")
+        if remote_url:
+            if remote_url.startswith("git@github.com:"):
+                remote_url = remote_url.replace("git@github.com:", "https://github.com/")
+                if remote_url.endswith(".git"):
+                    remote_url = remote_url[:-4]
+            sha = data.get("rendered_recipe", {}).get("extra", {}).get("sha")
+            if sha and remote_url.startswith("https://github.com/"):
+                return [f"{remote_url}/commit/{sha}"]
+            return remote_url
     if channel == "conda-forge":
         feedstocks = package_to_feedstock(package_name)
         return [f"https://github.com/conda-forge/{f}-feedstock" for f in feedstocks]
@@ -406,17 +417,23 @@ if data:
     except Exception as exc:
         logger.error(exc, exc_info=True)
 
-    feedstocks = "N/A"
     try:
-        feedstocks = []
-        for url in feedstock_url(package_name, channel):
+        provenance = []
+        for url in provenance_urls(package_name, channel, data):
+            if "/commit/" in url:
+                parts = url.split("/")
+                commit = parts[-1]
+                name = parts[-3]
+                provenance.append(f"[{name} @ `{commit[:7]}`]({url})")
+                continue
             name = url.split("/")[-1]
             if mark_archived_feedstocks:
                 if is_archived_feedstock(url):
                     name = f"~~{name}~~"
-            feedstocks.append(f"[{name}]({url})")
-        feedstocks = ", ".join(feedstocks)
+            provenance.append(f"[{name}]({url})")
+        provenance = ", ".join(provenance)
     except Exception as exc:
+        provenance = "N/A"
         logger.error(exc, exc_info=True)
 
     if with_patches:
@@ -473,8 +490,8 @@ if data:
             | **Channel** | **Subdir** | **Build** | **Extension** |
             | :---: | :---: | :---: | :---: |
             | `{channel}` | `{subdir}` | `{build_str}` | `{extension}` |
-            | **License** | **Uploaded** | **Maintainers** | **Feedstock(s)** |
-            | `{about.get("license", "*N/A*")}` | {uploaded} | {maintainers} | {feedstocks} |
+            | **License** | **Uploaded** | **Maintainers** | **Provenance** |
+            | `{about.get("license", "*N/A*")}` | {uploaded} | {maintainers} | {provenance} |
             | **Links:** | {download} | {project_urls} | {dashboard_urls} | 
             """
         )
