@@ -36,6 +36,11 @@ TWO_HOURS = 60 * 60 * 4
 CHANNELS = ["conda-forge", "bioconda", "pkgs/main", "pkgs/r", "pkgs/msys2"]
 
 
+def bar_esc(s):
+    "Escape vertical bars in tables"
+    return s.replace("|", "\\|")
+
+
 @st.cache_data(ttl=TWO_HOURS, max_entries=100)
 def channeldata(channel="conda-forge"):
     if channel.startswith("pkgs/"):
@@ -489,9 +494,9 @@ if data:
 
             | **Channel** | **Subdir** | **Build** | **Extension** |
             | :---: | :---: | :---: | :---: |
-            | `{channel}` | `{subdir}` | `{build_str}` | `{extension}` |
+            | `{channel}` | `{subdir}` | `{bar_esc(build_str)}` | `{extension}` |
             | **License** | **Uploaded** | **Maintainers** | **Provenance** |
-            | `{about.get("license", "*N/A*")}` | {uploaded} | {maintainers} | {provenance} |
+            | `{bar_esc(about.get("license", "*N/A*"))}` | {uploaded} | {maintainers} | {provenance} |
             | **Links:** | {download} | {project_urls} | {dashboard_urls} | 
             """
         )
