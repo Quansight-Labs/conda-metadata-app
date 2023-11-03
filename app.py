@@ -103,8 +103,16 @@ def provenance_urls(package_name, channel="conda-forge", data=None):
 
 
 def package_names(channel="conda-forge"):
-    return "", *sorted(
-        channeldata(channel)["packages"].keys(),
+    names = []
+    for name in channeldata(channel)["packages"].keys():
+        if channel == "pkgs/r":
+            if name not in ("r", "rpy2", "rstudio") and not name.startswith(("r-", "_r-", "mro-")):
+                continue            
+        elif channel == "pkgs/msys2" and not name.startswith(("m2-", "m2w64-", "msys2-")):
+            continue
+        names.append(name)
+    return sorted(
+        names,
         key=lambda x: f"zzzzzzz{x}" if x.startswith("_") else x,
     )
 
