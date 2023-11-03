@@ -482,22 +482,28 @@ if data:
     st.markdown(" ")
     dependencies = data.get("index", {}).get("depends", ())
     constraints = data.get("index", {}).get("constrains", ())
-    if dependencies or constraints:
+    run_exports = data.get("rendered_recipe", {}).get("build", {}).get("run_exports", ())
+    if dependencies or constraints or run_exports:
         c1, c2 = st.columns([1, 1])
         for title, key, specs, col in [
             ("Dependencies", "depends", dependencies, c1),
             ("Constraints", "constrains", constraints, c2),
         ]:
-            with col:
-                st.write(f"### {title}")
-                patched_specs = patched_data.get(key, {})
-                if patched_specs:
-                    specs = list(unified_diff(specs, patched_specs, n=100))[3:]
-                specs = "\n".join([s.strip() for s in specs])
-                if specs:
+            if specs:
+                with col:
+                    st.write(f"### {title}")
+                    patched_specs = patched_data.get(key, {})
+                    if patched_specs:
+                        specs = list(unified_diff(specs, patched_specs, n=100))[3:]
+                    specs = "\n".join([s.strip() for s in specs])
                     st.code(specs, language="diff", line_numbers=True)
-                else:
-                    st.markdown("*N/A*")
+        if run_exports:
+            with c2:
+                st.write("### Run exports")
+                if not hasattr(run_exports, "items"):
+                    run_exports = {"weak": run_exports}
+                text = "\n".join([f"{key}:\n- {'- '.join(value)}" for key, value in run_exports.items()])
+                st.code(text, language="yaml", line_numbers=True)
 
         st.markdown(" ")
 
