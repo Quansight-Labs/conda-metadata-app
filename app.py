@@ -104,7 +104,7 @@ def provenance_urls(package_name, channel="conda-forge", data=None):
 
 
 def package_names(channel="conda-forge"):
-    names = []
+    names = [""]
     for name in channeldata(channel)["packages"].keys():
         if channel == "pkgs/r":
             if name not in ("r", "rpy2", "rstudio") and not name.startswith(("r-", "_r-", "mro-")):
