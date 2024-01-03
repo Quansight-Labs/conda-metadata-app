@@ -21,6 +21,7 @@ from conda_forge_metadata.feedstock_outputs import package_to_feedstock
 from conda_package_streaming.package_streaming import stream_conda_component
 from conda_package_streaming.url import conda_reader_for_url
 from streamlit.logger import get_logger
+from xml.etree import ElementTree as ET
 
 from version_order import VersionOrder
 
@@ -33,6 +34,7 @@ st.set_page_config(
 )
 ONE_DAY = 60 * 60 * 24
 TWO_HOURS = 60 * 60 * 4
+THIRTY_MINS = 60 * 30
 CHANNELS = ["conda-forge", "bioconda", "pkgs/main", "pkgs/r"]
 # pkgs/msys2 does not seem to offer .conda artifacts; leave out for now
 
@@ -41,6 +43,16 @@ def bar_esc(s):
     "Escape vertical bars in tables"
     return s.replace("|", "\\|")
 
+
+@st.cache_data(ttl=THIRTY_MINS, max_entries=5)
+def rssdata(channel="conda-forge"):
+    if channel.startswith("pkgs/"):
+        r = requests.get(f"https://repo.anaconda.com/{channel}/rss.xml")
+    else:
+        r = requests.get(f"https://conda.anaconda.org/{channel}/rss.xml")
+    r.raise_for_status()
+    return ET.ElementTree(ET.fromstring(r.text))
+    
 
 @st.cache_data(ttl=TWO_HOURS, max_entries=100)
 def channeldata(channel="conda-forge"):
@@ -235,29 +247,32 @@ def parse_url_params():
     ok = True
     if "q" in url_params:
         query = url_params["q"][0]
-        try:
-            channel, subdir, artifact = query.rsplit("/", 2)
-        except Exception as exc:
-            logger.error(exc)
-            ok = False
+        if query in CHANNELS:
+            channel = query
         else:
-            if artifact:
-                if artifact.endswith(".conda"):
-                    extension = "conda"
-                elif artifact.endswith(".tar.bz2"):
-                    extension = "tar.bz2"
-                else:
-                    extension = None
-                    channel, subdir, artifact = [None] * 3
-                    ok = False
-                if extension:
-                    try:
-                        package_name, version, build = artifact[
-                            : -len(f".{extension}")
-                        ].rsplit("-", 2)
-                    except Exception as exc:
-                        logger.error(exc)
-                        ok = False
+            try:
+                channel, subdir, artifact = query.rsplit("/", 2)
+            except Exception as exc:
+                logger.error(exc)
+                ok = False
+            else:
+                if artifact:
+                    if artifact.endswith(".conda"):
+                        extension = "conda"
+                    elif artifact.endswith(".tar.bz2"):
+                        extension = "tar.bz2"
+                    else:
+                        extension = None
+                    if extension:
+                        try:
+                            package_name, version, build = artifact[
+                                : -len(f".{extension}")
+                            ].rsplit("-", 2)
+                        except Exception as exc:
+                            logger.error(exc)
+                            ok = False
+                    else:
+                        package_name = artifact
     elif url_params:
         ok = False
     return {
@@ -282,11 +297,16 @@ elif url_params["artifact"] and "channel" not in st.session_state:
     # Initialize state from URL params, only on first run
     # These state keys match the sidebar widgets keys below
     st.session_state.channel = url_params["channel"]
-    st.session_state.subdir = url_params["subdir"]
-    st.session_state.package_name = url_params["package_name"]
-    st.session_state.version = url_params["version"]
-    st.session_state.build = url_params["build"]
-    st.session_state.extension = url_params["extension"]
+    if url_params["subdir"] is not None:
+        st.session_state.subdir = url_params["subdir"]
+    if url_params["package_name"] is not None:
+        st.session_state.package_name = url_params["package_name"]
+    if url_params["version"] is not None:
+        st.session_state.version = url_params["version"]
+    if url_params["build"] is not None:
+        st.session_state.build = url_params["build"]
+    if url_params["extension"] is not None:
+        st.session_state.extension = url_params["extension"]
 
 with st.sidebar:
     st.title(
@@ -419,10 +439,13 @@ if submitted or all([channel, subdir, package_name, version, build, extension]):
             logger.error(f"No metadata found for `{query}`.")
             st.error(f"No metadata found for `{query}`.")
             st.stop()
+elif channel and not package_name and not subdir and not version and not build and not extension:
+    st.experimental_set_query_params(q=f"{channel}")
+    data = "show_latest"
 else:
     data = ""
 
-if data:
+if isinstance(data, dict):
     uploaded = "N/A"
     try:
         timestamp = data.get("index", {}).get("timestamp", 0) / 1000
@@ -545,3 +568,26 @@ if data:
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
+elif data == "show_latest":
+    try:
+        data = rssdata(channel)
+    except Exception as exc:
+        logger.error(exc, exc_info=True)
+        st.error(f"Could not obtain RSS data for {channel}! `{exc.__class__.__name__}: {exc}`")
+        st.stop()
+
+    table = [
+        "| **#** | **Package** | **Version** | **Platform(s)** | **Published** |",
+        "| :---: | :---: | :---: | :---: | :---: |",
+    ]
+    for n, item in enumerate(data.findall("channel/item"), 1):
+        title = item.find("title").text
+        name, version, platforms = title.split(" ", 2)
+        platforms = platforms[1:-1]
+        published = item.find("pubDate").text
+        platform = platforms.split(",")[0]
+        more_url = f"/?q={channel}/{platform}/{name}"
+        table.append(f"| {n} | <a href='{more_url}' target='_self'>{name}</a> | {version} | {platforms} | {published}")
+    st.markdown(f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})")
+    st.markdown(f"> Last update: {data.find('channel/pubDate').text}.")
+    st.markdown("\n".join(table), unsafe_allow_html=True)
