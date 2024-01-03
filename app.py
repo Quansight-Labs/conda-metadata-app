@@ -587,7 +587,7 @@ elif data == "show_latest":
         published = item.find("pubDate").text
         platform = platforms.split(",")[0]
         more_url = f"/?q={channel}/{platform}/{name}"
-        table.append(f"| {n} | <a href='{more_url}' target='_self'>{name}</a> | {version} | {platforms} | {published}")
+        table.append(f"| {n} | [{name}]({more_url})| {version} | {platforms} | {published}")
     st.markdown(f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})")
     st.markdown(f"> Last update: {data.find('channel/pubDate').text}.")
-    st.markdown("\n".join(table), unsafe_allow_html=True)
+    st.markdown("\n".join(table))
