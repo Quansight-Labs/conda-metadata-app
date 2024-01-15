@@ -321,7 +321,7 @@ with st.sidebar:
         CHANNELS,
         key="channel",
         # Use the user provided channel (via query params) if possible.
-        index=url_ok and CHANNELS.index(url_params["channel"]) or 0,
+        index=url_params["channel"] in CHANNELS and CHANNELS.index(url_params["channel"]) or 0,
     )
     package_name = st.selectbox(
         "Enter a package name:",
