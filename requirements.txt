@@ -1,2 +1,2 @@
-conda-forge-metadata==0.6.0
+conda-forge-metadata==0.6.2
 git+https://github.com/channel-mirrors/conda-oci-mirror.git@v0.1.0
