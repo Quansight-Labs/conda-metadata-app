@@ -213,12 +213,14 @@ def artifact_metadata(channel, subdir, artifact):
             subdir=subdir,
             artifact=artifact,
             backend="streamed",
+            skip_files_suffixes=(),
         )
     data = get_artifact_info_as_json(
         channel=channel,
         subdir=subdir,
         artifact=artifact,
         backend="oci",
+        skip_files_suffixes=(),
     )
     if (data and data.get("name")) or artifact.endswith(".tar.bz2"):
         return data
@@ -228,6 +230,7 @@ def artifact_metadata(channel, subdir, artifact):
         subdir=subdir,
         artifact=artifact,
         backend="streamed",
+        skip_files_suffixes=(),
     )
 
 
