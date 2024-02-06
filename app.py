@@ -245,16 +245,36 @@ def is_archived_feedstock(feedstock):
 
 
 def parse_url_params():
+    """
+    Allowed query params:
+    - q: channel
+    - q: channel/package_name
+    - q: channel/subdir/package_name
+    - q: channel/subdir/package_name-version-build.extension
+    """
     channel, subdir, artifact, package_name, version, build, extension = [None] * 7
     url_params = st.experimental_get_query_params()
     ok = True
     if "q" in url_params:
         query = url_params["q"][0]
-        if query in CHANNELS:
+        if query in CHANNELS:  # channel only
             channel = query
-        else:
+        elif "/" in query:
             try:
-                channel, subdir, artifact = query.rsplit("/", 2)
+                components = query.split("/")
+                if len(components) == 2:  # cannot be pkgs/main because we checked above
+                    channel, artifact = components
+                    subdir = None
+                elif len(components) == 3:
+                    channel, subdir, artifact = components
+                    if f"{channel}/{subdir}" in CHANNELS:
+                        channel = f"{channel}/{subdir}"
+                        subdir = None
+                elif len(components) == 4:
+                    *channel, subdir, artifact = components
+                    channel = "/".join(channel)
+                else:
+                    raise ValueError("Invalid number of URL components")
             except Exception as exc:
                 logger.error(exc)
                 ok = False
@@ -294,7 +314,11 @@ if not url_ok:
     st.experimental_set_query_params()
     st.error(
         f"Invalid URL params: `{url_params}`.\n\n"
-        "Use syntax `/?q=channel/subdir/package_name-version-build.extension`."
+        "Allowed syntaxes: \n"
+        "- `/?q=channel`.\n"
+        "- `/?q=channel/package_name`.\n"
+        "- `/?q=channel/subdir/package_name`.\n"
+        "- `/?q=channel/subdir/package_name-version-build.extension`.\n"
     )
 elif url_params["artifact"] and "channel" not in st.session_state:
     # Initialize state from URL params, only on first run
@@ -590,8 +614,7 @@ elif data == "show_latest":
         name, version, platforms = title.split(" ", 2)
         platforms = platforms[1:-1]
         published = item.find("pubDate").text
-        platform = platforms.split(",")[0]
-        more_url = f"/?q={channel}/{platform}/{name}"
+        more_url = f"/?q={channel}/{name}"
         table.append(f"| {n} | [{name}]({more_url})| {version} | {platforms} | {published}")
     st.markdown(f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})")
     st.markdown(f"> Last update: {data.find('channel/pubDate').text}.")
