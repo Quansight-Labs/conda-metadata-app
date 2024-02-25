@@ -35,6 +35,7 @@ st.set_page_config(
 ONE_DAY = 60 * 60 * 24
 TWO_HOURS = 60 * 60 * 4
 THIRTY_MINS = 60 * 30
+FIFTEEN_MINS = 60 * 30
 CHANNELS = ["conda-forge", "bioconda", "pkgs/main", "pkgs/r"]
 # pkgs/msys2 does not seem to offer .conda artifacts; leave out for now
 
@@ -44,7 +45,7 @@ def bar_esc(s):
     return s.replace("|", "\\|")
 
 
-@st.cache_data(ttl=THIRTY_MINS, max_entries=5)
+@st.cache_data(ttl=FIFTEEN_MINS, max_entries=5)
 def rssdata(channel="conda-forge"):
     if channel.startswith("pkgs/"):
         r = requests.get(f"https://repo.anaconda.com/{channel}/rss.xml")
@@ -54,7 +55,7 @@ def rssdata(channel="conda-forge"):
     return ET.ElementTree(ET.fromstring(r.text))
     
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=100)
+@st.cache_data(ttl=FIFTEEN_MINS, max_entries=100)
 def channeldata(channel="conda-forge"):
     if channel.startswith("pkgs/"):
         r = requests.get(f"https://repo.anaconda.com/{channel}/channeldata.json")
@@ -64,7 +65,7 @@ def channeldata(channel="conda-forge"):
     return r.json()
 
 
-@st.cache_data(ttl=TWO_HOURS, max_entries=100)
+@st.cache_data(ttl=FIFTEEN_MINS, max_entries=100)
 def api_data(package_name, channel="conda-forge"):
     if channel.startswith("pkgs/"):
         channel = channel.split("/", 1)[1]
@@ -327,7 +328,11 @@ elif url_params["artifact"] and "channel" not in st.session_state:
     if url_params["subdir"] is not None:
         st.session_state.subdir = url_params["subdir"]
     if url_params["package_name"] is not None:
-        st.session_state.package_name = url_params["package_name"]
+        _package_name = url_params["package_name"]
+        if _package_name in package_names(url_params["channel"]):
+            st.session_state.package_name = url_params["package_name"]
+        else:
+            st.error(f"Package `{_package_name}` not yet available in {url_params['channel']}!")
     if url_params["version"] is not None:
         st.session_state.version = url_params["version"]
     if url_params["build"] is not None:
