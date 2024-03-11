@@ -1254,7 +1254,7 @@ package:
   timestamp: 1679481450658
 - platform: osx-64
   name: conda-forge-metadata
-  version: 0.6.1
+  version: 0.6.2
   category: main
   manager: conda
   dependencies:
@@ -1264,10 +1264,10 @@ package:
   - requests
   - ruamel.yaml
   - typing-extensions
-  url: https://conda.anaconda.org/conda-forge/noarch/conda-forge-metadata-0.6.1-pyhd8ed1ab_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/conda-forge-metadata-0.6.2-pyhd8ed1ab_0.conda
   hash:
-    md5: adcc858ca99533734473229483202f57
-    sha256: d81a78a28a3aa44ec79ba51201c632be7e191a4b1937871496cce0fe580fc72d
+    md5: d0a1925fb685c8fd5912637ee9c9634e
+    sha256: 3fe4b210750488a92d6ab5be18de9255fa1ea003dc80737e00d01ed38d3e0b81
   build: pyhd8ed1ab_0
   arch: x86_64
   subdir: osx-64
@@ -1275,11 +1275,11 @@ package:
   license: BSD-3-Clause
   license_family: BSD
   noarch: python
-  size: 14944
-  timestamp: 1698058738724
+  size: 15151
+  timestamp: 1705926396245
 - platform: osx-arm64
   name: conda-forge-metadata
-  version: 0.6.1
+  version: 0.6.2
   category: main
   manager: conda
   dependencies:
@@ -1289,10 +1289,10 @@ package:
   - requests
   - ruamel.yaml
   - typing-extensions
-  url: https://conda.anaconda.org/conda-forge/noarch/conda-forge-metadata-0.6.1-pyhd8ed1ab_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/conda-forge-metadata-0.6.2-pyhd8ed1ab_0.conda
   hash:
-    md5: adcc858ca99533734473229483202f57
-    sha256: d81a78a28a3aa44ec79ba51201c632be7e191a4b1937871496cce0fe580fc72d
+    md5: d0a1925fb685c8fd5912637ee9c9634e
+    sha256: 3fe4b210750488a92d6ab5be18de9255fa1ea003dc80737e00d01ed38d3e0b81
   build: pyhd8ed1ab_0
   arch: aarch64
   subdir: osx-arm64
@@ -1300,8 +1300,8 @@ package:
   license: BSD-3-Clause
   license_family: BSD
   noarch: python
-  size: 14944
-  timestamp: 1698058738724
+  size: 15151
+  timestamp: 1705926396245
 - platform: osx-64
   name: conda-oci-mirror
   version: 0.1.0

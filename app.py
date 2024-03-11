@@ -21,6 +21,7 @@ from conda_forge_metadata.feedstock_outputs import package_to_feedstock
 from conda_package_streaming.package_streaming import stream_conda_component
 from conda_package_streaming.url import conda_reader_for_url
 from streamlit.logger import get_logger
+from streamlit_searchbox import st_searchbox
 from xml.etree import ElementTree as ET
 
 from version_order import VersionOrder
@@ -250,14 +251,15 @@ def parse_url_params():
     Allowed query params:
     - q: channel
     - q: channel/package_name
-    - q: channel/subdir/package_name
+    - q: channel/subdir::package_name-version-build
     - q: channel/subdir/package_name-version-build.extension
     """
     channel, subdir, artifact, package_name, version, build, extension = [None] * 7
-    url_params = st.experimental_get_query_params()
+    path = None
+    url_params = st.query_params.to_dict()
     ok = True
     if "q" in url_params:
-        query = url_params["q"][0]
+        query = url_params["q"]
         if query in CHANNELS:  # channel only
             channel = query
         elif "/" in query:
@@ -283,20 +285,19 @@ def parse_url_params():
                 if artifact:
                     if artifact.endswith(".conda"):
                         extension = "conda"
+                        rest_of_artifact = artifact[:-len(".conda")]
                     elif artifact.endswith(".tar.bz2"):
                         extension = "tar.bz2"
+                        rest_of_artifact = artifact[:-len(".tar.bz2")]
                     else:
                         extension = None
-                    if extension:
-                        try:
-                            package_name, version, build = artifact[
-                                : -len(f".{extension}")
-                            ].rsplit("-", 2)
-                        except Exception as exc:
-                            logger.error(exc)
-                            ok = False
-                    else:
+                        rest_of_artifact = artifact
+                    try:
+                        package_name, version, build = rest_of_artifact.rsplit("-", 2)
+                    except Exception:
                         package_name = artifact
+    elif "path" in url_params:
+        path = url_params["path"]
     elif url_params:
         ok = False
     return {
@@ -307,20 +308,23 @@ def parse_url_params():
         "version": version,
         "build": build,
         "extension": extension,
+        "path": path,
     }, ok
 
 
 url_params, url_ok = parse_url_params()
 if not url_ok:
-    st.experimental_set_query_params()
     st.error(
         f"Invalid URL params: `{url_params}`.\n\n"
         "Allowed syntaxes: \n"
         "- `/?q=channel`.\n"
         "- `/?q=channel/package_name`.\n"
         "- `/?q=channel/subdir/package_name`.\n"
+        "- `/?q=channel/subdir/package_name-version-build`.\n"
         "- `/?q=channel/subdir/package_name-version-build.extension`.\n"
     )
+    st.query_params.clear()
+    st.stop()
 elif url_params["artifact"] and "channel" not in st.session_state:
     # Initialize state from URL params, only on first run
     # These state keys match the sidebar widgets keys below
@@ -442,27 +446,74 @@ def disable_button(query):
     return True
 
 
-c1, c2 = st.columns([1, 0.25])
-with c1:
-    query = st.text_input(
-        label="Search artifact metadata:",
-        placeholder="channel/subdir::package_name-version-build.ext",
-        value=input_value_so_far(),
-        label_visibility="collapsed",
-        key="query_input",
+def autocomplete_paths(query):
+    r = requests.get(
+        "https://cforge.quansight.dev/path_to_artifacts/find_files.json", 
+        params={"path": query},
     )
-with c2:
-    submitted = st.button(
-        "Submit",
-        key="form",
-        disabled=disable_button(query),
-        use_container_width=True,
-    )
+    r.raise_for_status()
+    data = r.json()
+    if data["ok"]:
+        return [row[0] for row in data["rows"]]
 
-if submitted or all([channel, subdir, package_name, version, build, extension]):
+
+def find_artifacts_by_path(path):
+    r = requests.get(
+        "https://cforge.quansight.dev/path_to_artifacts/find_artifacts.json", 
+        params={"path": path},
+    )
+    r.raise_for_status()
+    data = r.json()
+    if data["ok"]:
+        return [row[0] for row in data["rows"]]
+    return data
+
+
+t1, t2 = st.tabs(["Direct input", "Find by file path"])
+with t1:
+    c1, c2 = st.columns([1, 0.25])
+    with c1:
+        query = st.text_input(
+                label="Search artifact metadata:",
+                placeholder="channel/subdir::package_name-version-build.ext",
+                value=input_value_so_far(),
+                label_visibility="collapsed",
+                key="query_input",
+            )
+    with c2:
+        submitted = st.button(
+            "Submit",
+            key="form",
+            disabled=disable_button(query),
+            use_container_width=True,
+        )
+with t2:
+    c1, c2 = st.columns([1, 0.25])
+    with c1:
+        path_to_search = st_searchbox(
+            autocomplete_paths,
+            placeholder="Choose one path (type for autocomplete)",
+            key="path_search_input",
+            default=url_params.get("path"),
+            help="Autocomplete matches on full path components, basenames and extensions. "
+            "It won't match on partial paths or substrings.", 
+        )
+    with c2:
+        search_submitted = st.button(
+            "Submit",
+            key="path_search_btn",
+            disabled=not bool(path_to_search),
+            use_container_width=True,
+        )
+
+
+if search_submitted:
+    data = find_artifacts_by_path(path_to_search)
+elif submitted or all([channel, subdir, package_name, version, build]):
     channel_subdir, artifact = query.split("::")
     channel, subdir = channel_subdir.rsplit("/", 1)
-    st.experimental_set_query_params(q=f"{channel}/{subdir}/{artifact}")
+    st.query_params.clear()
+    st.query_params.q = f"{channel}/{subdir}/{artifact}"
     with st.spinner("Fetching metadata..."):
         data = artifact_metadata(
             channel=channel,
@@ -474,7 +525,8 @@ if submitted or all([channel, subdir, package_name, version, build, extension]):
             st.error(f"No metadata found for `{query}`.")
             st.stop()
 elif channel and not package_name and not subdir and not version and not build and not extension:
-    st.experimental_set_query_params(q=f"{channel}")
+    st.query_params.clear()
+    st.query_params.q = channel
     data = "show_latest"
 else:
     data = ""
@@ -602,6 +654,15 @@ if isinstance(data, dict):
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
+elif isinstance(data, (list, tuple)):
+    st.write(f"### Artifacts found ({len(data)}):")
+    lines = []
+    for artifact in data:
+        channel, subdir, artifact = artifact.rsplit("/", 2)
+        if channel == "cf":
+            channel = "conda-forge"
+        lines.append(f"- [`{channel}/{subdir}::{artifact}`](/?q={channel}/{subdir}/{artifact})")
+    st.write("\n".join(lines))
 elif data == "show_latest":
     try:
         data = rssdata(channel)

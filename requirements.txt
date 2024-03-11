@@ -1,2 +1,4 @@
-conda-forge-metadata==0.6.2
+conda-forge-metadata==0.8.0
 git+https://github.com/channel-mirrors/conda-oci-mirror.git@v0.1.0
+streamlit==1.32.0
+streamlit-searchbox==0.1.7
