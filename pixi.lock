@@ -5733,46 +5733,6 @@ package:
   size: 840719
   timestamp: 1681904335148
 - platform: osx-64
-  name: pympler
-  version: 1.0.1
-  category: main
-  manager: conda
-  dependencies:
-  - python >=3.6
-  url: https://conda.anaconda.org/conda-forge/noarch/pympler-1.0.1-pyhd8ed1ab_0.tar.bz2
-  hash:
-    md5: e6932cc2794f4a961c3d6c14022e55d0
-    sha256: 79244621d53a7af8f23a3c40d959e4638b636e149ca48ecdf61139cfc5bd3e83
-  build: pyhd8ed1ab_0
-  arch: x86_64
-  subdir: osx-64
-  build_number: 0
-  license: Apache-2.0
-  license_family: APACHE
-  noarch: python
-  size: 143998
-  timestamp: 1658620793354
-- platform: osx-arm64
-  name: pympler
-  version: 1.0.1
-  category: main
-  manager: conda
-  dependencies:
-  - python >=3.6
-  url: https://conda.anaconda.org/conda-forge/noarch/pympler-1.0.1-pyhd8ed1ab_0.tar.bz2
-  hash:
-    md5: e6932cc2794f4a961c3d6c14022e55d0
-    sha256: 79244621d53a7af8f23a3c40d959e4638b636e149ca48ecdf61139cfc5bd3e83
-  build: pyhd8ed1ab_0
-  arch: aarch64
-  subdir: osx-arm64
-  build_number: 0
-  license: Apache-2.0
-  license_family: APACHE
-  noarch: python
-  size: 143998
-  timestamp: 1658620793354
-- platform: osx-64
   name: pysocks
   version: 1.7.1
   category: main
@@ -6713,7 +6673,7 @@ package:
   timestamp: 1669632203115
 - platform: osx-64
   name: streamlit
-  version: 1.24.1
+  version: 1.32.0
   category: main
   manager: conda
   dependencies:
@@ -6721,84 +6681,82 @@ package:
   - blinker >=1.0.0,<2
   - cachetools >=4.0,<6
   - click >=7.0,<9
-  - gitpython >=3,<4,!=3.1.19
-  - importlib-metadata >=1.4,<7
-  - numpy >=1,<2
-  - packaging >=14.1,<24
-  - pandas <3,>=0.25
-  - pillow >=6.2.0,<10
+  - gitpython >=3.0.7,<4,!=3.1.19
+  - importlib-metadata >=1.4,<8
+  - numpy >=1.19.3,<2
+  - packaging >=16.8,<24
+  - pandas >=1.3.0,<3
+  - pillow >=7.1.0,<11
   - protobuf >=3.20,<5
-  - pyarrow >=4.0
-  - pydeck >=0.1.dev5,<1
-  - pympler >=0.9,<2
+  - pyarrow >=7.0
+  - pydeck >=0.8.0b4,<1
   - python >=3.8
-  - python-dateutil >=2,<3
-  - requests >=2.4,<3
-  - rich >=10.11.0,<14
+  - python-dateutil >=2.7.3,<3
+  - requests >=2.27,<3
+  - rich >=10.14.0,<14
   - tenacity <9,>=8.0.0
-  - toml <2
+  - toml >=0.10.1,<2
   - tornado >=6.0.3,<7
-  - typing_extensions >=4.0.1,<5
-  - tzlocal >=1.1,<5
+  - typing_extensions >=4.1.0,<5
+  - tzlocal >=1.1,<6
   - validators >=0.2,<1
-  - watchdog
-  url: https://conda.anaconda.org/conda-forge/noarch/streamlit-1.24.1-pyhd8ed1ab_1.conda
+  - watchdog >=2.1.5
+  url: https://conda.anaconda.org/conda-forge/noarch/streamlit-1.32.0-pyhd8ed1ab_0.conda
   hash:
-    md5: c58d3db48359863165c5ee9c8e1190f9
-    sha256: cedf73752d44401d44d05a93c49b0662b8cd66223392bba7da6bd77d9a9a1696
-  build: pyhd8ed1ab_1
+    md5: f5fc96c73a7260807faa6bf34ddae910
+    sha256: 4b36b886a2dc52dc0774a336d705705e47684b0f79959878b5d0ec947d7c48da
+  build: pyhd8ed1ab_0
   arch: x86_64
   subdir: osx-64
-  build_number: 1
+  build_number: 0
   license: Apache-2.0
   license_family: APACHE
   noarch: python
-  size: 6822998
-  timestamp: 1688771370047
+  size: 6582948
+  timestamp: 1710016501276
 - platform: osx-arm64
   name: streamlit
-  version: 1.24.1
+  version: 1.32.0
   category: main
   manager: conda
   dependencies:
-  - python >=3.8
-  - requests >=2.4,<3
-  - pandas <3,>=0.25
-  - cachetools >=4.0,<6
-  - pympler >=0.9,<2
-  - python-dateutil >=2,<3
   - altair >=3.2.0,<6
-  - click >=7.0,<9
-  - pyarrow >=4.0
-  - tenacity <9,>=8.0.0
-  - protobuf >=3.20,<5
   - blinker >=1.0.0,<2
-  - gitpython >=3,<4,!=3.1.19
-  - importlib-metadata >=1.4,<7
-  - pydeck >=0.1.dev5,<1
-  - rich >=10.11.0,<14
-  - toml <2
-  - tzlocal >=1.1,<5
-  - validators >=0.2,<1
-  - watchdog *
-  - numpy >=1,<2
-  - pillow >=6.2.0,<10
-  - typing_extensions >=4.0.1,<5
+  - cachetools >=4.0,<6
+  - click >=7.0,<9
+  - gitpython >=3.0.7,<4,!=3.1.19
+  - importlib-metadata >=1.4,<8
+  - numpy >=1.19.3,<2
+  - packaging >=16.8,<24
+  - pandas >=1.3.0,<3
+  - pillow >=7.1.0,<11
+  - protobuf >=3.20,<5
+  - pyarrow >=7.0
+  - pydeck >=0.8.0b4,<1
+  - python >=3.8
+  - python-dateutil >=2.7.3,<3
+  - requests >=2.27,<3
+  - rich >=10.14.0,<14
+  - tenacity <9,>=8.0.0
+  - toml >=0.10.1,<2
   - tornado >=6.0.3,<7
-  - packaging >=14.1,<24
-  url: https://conda.anaconda.org/conda-forge/noarch/streamlit-1.24.1-pyhd8ed1ab_1.conda
+  - typing_extensions >=4.1.0,<5
+  - tzlocal >=1.1,<6
+  - validators >=0.2,<1
+  - watchdog >=2.1.5
+  url: https://conda.anaconda.org/conda-forge/noarch/streamlit-1.32.0-pyhd8ed1ab_0.conda
   hash:
-    md5: c58d3db48359863165c5ee9c8e1190f9
-    sha256: cedf73752d44401d44d05a93c49b0662b8cd66223392bba7da6bd77d9a9a1696
-  build: pyhd8ed1ab_1
+    md5: f5fc96c73a7260807faa6bf34ddae910
+    sha256: 4b36b886a2dc52dc0774a336d705705e47684b0f79959878b5d0ec947d7c48da
+  build: pyhd8ed1ab_0
   arch: aarch64
   subdir: osx-arm64
-  build_number: 1
+  build_number: 0
   license: Apache-2.0
   license_family: APACHE
   noarch: python
-  size: 6822998
-  timestamp: 1688771370047
+  size: 6582948
+  timestamp: 1710016501276
 - platform: osx-64
   name: tenacity
   version: 8.2.3

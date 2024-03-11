@@ -7,8 +7,8 @@ channels = ["conda-forge"]
 platforms = ["osx-arm64", "osx-64"]
 
 [tasks]
-dev = "streamlit run --server.runOnSave=true app.py"
-deploy = "streamlit run --server.headless=true --global.developmentMode=false app.py"
+dev = "streamlit run --server.runOnSave=true Browse.py"
+deploy = "streamlit run --server.headless=true --global.developmentMode=false Browse.py"
 
 [dependencies]
 streamlit = "1.32.0.*"

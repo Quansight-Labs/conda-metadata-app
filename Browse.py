@@ -21,7 +21,6 @@ from conda_forge_metadata.feedstock_outputs import package_to_feedstock
 from conda_package_streaming.package_streaming import stream_conda_component
 from conda_package_streaming.url import conda_reader_for_url
 from streamlit.logger import get_logger
-from streamlit_searchbox import st_searchbox
 from xml.etree import ElementTree as ET
 
 from version_order import VersionOrder
@@ -446,70 +445,25 @@ def disable_button(query):
     return True
 
 
-def autocomplete_paths(query):
-    r = requests.get(
-        "https://cforge.quansight.dev/path_to_artifacts/find_files.json", 
-        params={"path": query},
+c1, c2 = st.columns([1, 0.25])
+with c1:
+    query = st.text_input(
+            label="Search artifact metadata:",
+            placeholder="channel/subdir::package_name-version-build.ext",
+            value=input_value_so_far(),
+            label_visibility="collapsed",
+            key="query_input",
+            disabled=True,
+        )
+with c2:
+    submitted = st.button(
+        "Submit",
+        key="form",
+        disabled=disable_button(query),
+        use_container_width=True,
     )
-    r.raise_for_status()
-    data = r.json()
-    if data["ok"]:
-        return [row[0] for row in data["rows"]]
 
-
-def find_artifacts_by_path(path):
-    r = requests.get(
-        "https://cforge.quansight.dev/path_to_artifacts/find_artifacts.json", 
-        params={"path": path},
-    )
-    r.raise_for_status()
-    data = r.json()
-    if data["ok"]:
-        return [row[0] for row in data["rows"]]
-    return data
-
-
-t1, t2 = st.tabs(["Direct input", "Find by file path"])
-with t1:
-    c1, c2 = st.columns([1, 0.25])
-    with c1:
-        query = st.text_input(
-                label="Search artifact metadata:",
-                placeholder="channel/subdir::package_name-version-build.ext",
-                value=input_value_so_far(),
-                label_visibility="collapsed",
-                key="query_input",
-            )
-    with c2:
-        submitted = st.button(
-            "Submit",
-            key="form",
-            disabled=disable_button(query),
-            use_container_width=True,
-        )
-with t2:
-    c1, c2 = st.columns([1, 0.25])
-    with c1:
-        path_to_search = st_searchbox(
-            autocomplete_paths,
-            placeholder="Choose one path (type for autocomplete)",
-            key="path_search_input",
-            default=url_params.get("path"),
-            help="Autocomplete matches on full path components, basenames and extensions. "
-            "It won't match on partial paths or substrings.", 
-        )
-    with c2:
-        search_submitted = st.button(
-            "Submit",
-            key="path_search_btn",
-            disabled=not bool(path_to_search),
-            use_container_width=True,
-        )
-
-
-if search_submitted:
-    data = find_artifacts_by_path(path_to_search)
-elif submitted or all([channel, subdir, package_name, version, build]):
+if submitted or all([channel, subdir, package_name, version, build]):
     channel_subdir, artifact = query.split("::")
     channel, subdir = channel_subdir.rsplit("/", 1)
     st.query_params.clear()
@@ -654,15 +608,6 @@ if isinstance(data, dict):
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
-elif isinstance(data, (list, tuple)):
-    st.write(f"### Artifacts found ({len(data)}):")
-    lines = []
-    for artifact in data:
-        channel, subdir, artifact = artifact.rsplit("/", 2)
-        if channel == "cf":
-            channel = "conda-forge"
-        lines.append(f"- [`{channel}/{subdir}::{artifact}`](/?q={channel}/{subdir}/{artifact})")
-    st.write("\n".join(lines))
 elif data == "show_latest":
     try:
         data = rssdata(channel)
