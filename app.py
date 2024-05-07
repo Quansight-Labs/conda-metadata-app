@@ -35,7 +35,7 @@ st.set_page_config(
 ONE_DAY = 60 * 60 * 24
 TWO_HOURS = 60 * 60 * 4
 THIRTY_MINS = 60 * 30
-FIFTEEN_MINS = 60 * 30
+FIFTEEN_MINS = 60 * 15
 CHANNELS = ["conda-forge", "bioconda", "pkgs/main", "pkgs/r"]
 # pkgs/msys2 does not seem to offer .conda artifacts; leave out for now
 
