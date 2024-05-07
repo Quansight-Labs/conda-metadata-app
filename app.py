@@ -365,11 +365,14 @@ with st.sidebar:
     )
     _available_subdirs = subdirs(package_name, channel)
     _best_subdir, _best_version = _best_version_in_subdir(package_name, channel)
-    _subdir_index = _available_subdirs.index(_best_subdir) if _best_subdir else 0
+    if _best_subdir and not st.session_state.subdir:
+        st.session_state.subdir = _best_subdir
+    if _best_version and not st.session_state.version:
+        st.session_state.version = _best_version
+    
     subdir = st.selectbox(
         "Select a subdir:",
         options=_available_subdirs,
-        index=_subdir_index,
         key="subdir",
     )
     version = st.selectbox(
@@ -389,15 +392,20 @@ with st.sidebar:
             f"<sup>ℹ️ v{_best_version} is available for {_best_subdir}</sup>",
             unsafe_allow_html=True,
         )
-
+    _build_options = builds(package_name, subdir, version, channel)
+    if _build_options and not st.session_state.build:
+        st.session_state.build = _build_options[0]
     build = st.selectbox(
         "Select a build:",
-        options=builds(package_name, subdir, version, channel),
+        options=_build_options,
         key="build",
     )
+    _extension_options = extensions(package_name, subdir, version, build, channel)
+    if _extension_options and not st.session_state.extension:
+        st.session_state.extension = _extension_options[0]
     extension = st.selectbox(
         "Select an extension:",
-        options=extensions(package_name, subdir, version, build, channel),
+        options=_extension_options,
         key="extension",
     )
     if channel == "conda-forge":
@@ -445,7 +453,7 @@ def disable_button(query):
     return True
 
 
-c1, c2 = st.columns([1, 0.25])
+c1, c2 = st.columns([1, 0.15])
 with c1:
     query = st.text_input(
             label="Search artifact metadata:",
@@ -462,6 +470,7 @@ with c2:
         disabled=disable_button(query),
         use_container_width=True,
     )
+
 
 if submitted or all([channel, subdir, package_name, version, build]):
     channel_subdir, artifact = query.split("::")
