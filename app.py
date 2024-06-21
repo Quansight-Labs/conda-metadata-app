@@ -45,7 +45,7 @@ def bar_esc(s):
     return s.replace("|", "\\|")
 
 
-@st.cache_data(ttl=FIFTEEN_MINS, max_entries=5)
+@st.cache_resource(ttl=FIFTEEN_MINS, max_entries=5)
 def rssdata(channel="conda-forge"):
     if channel.startswith("pkgs/"):
         r = requests.get(f"https://repo.anaconda.com/{channel}/rss.xml")
@@ -55,7 +55,7 @@ def rssdata(channel="conda-forge"):
     return ET.ElementTree(ET.fromstring(r.text))
     
 
-@st.cache_data(ttl=FIFTEEN_MINS, max_entries=100)
+@st.cache_resource(ttl=FIFTEEN_MINS, max_entries=10)
 def channeldata(channel="conda-forge"):
     if channel.startswith("pkgs/"):
         r = requests.get(f"https://repo.anaconda.com/{channel}/channeldata.json")
@@ -65,7 +65,7 @@ def channeldata(channel="conda-forge"):
     return r.json()
 
 
-@st.cache_data(ttl=FIFTEEN_MINS, max_entries=100)
+@st.cache_resource(ttl=FIFTEEN_MINS, max_entries=1000)
 def api_data(package_name, channel="conda-forge"):
     if channel.startswith("pkgs/"):
         channel = channel.split("/", 1)[1]
@@ -74,7 +74,7 @@ def api_data(package_name, channel="conda-forge"):
     return r.json()
 
 
-@st.cache_data(ttl=ONE_DAY, max_entries=2)
+@st.cache_resource(ttl=ONE_DAY, max_entries=10)
 def repodata_patches(channel="conda-forge"):
     package_name = f"{channel}-repodata-patches"
     data = api_data(package_name, channel)
@@ -89,7 +89,7 @@ def repodata_patches(channel="conda-forge"):
     return patches
 
 
-@st.cache_data(ttl=ONE_DAY, max_entries=1000)
+@st.cache_resource(ttl=ONE_DAY, max_entries=1000)
 def provenance_urls(package_name, channel="conda-forge", data=None):
     if not package_name or not data:
         return ""
@@ -198,7 +198,6 @@ def extensions(package_name, subdir, version, build, channel="conda-forge"):
     )
 
 
-@st.cache_data(show_spinner=False)
 def patched_repodata(channel, subdir, artifact):
     patches = repodata_patches(channel)[subdir]
     key = "packages.conda" if artifact.endswith(".conda") else "packages"

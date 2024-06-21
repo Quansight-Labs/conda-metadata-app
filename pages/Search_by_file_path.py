@@ -8,7 +8,7 @@ from streamlit_searchbox import st_searchbox
 FIFTEEN_MINS = 60 * 15
 
 
-@st.cache_data(ttl=FIFTEEN_MINS, max_entries=100)
+@st.cache_resource(ttl=FIFTEEN_MINS, max_entries=100)
 def autocomplete_paths(query):
     time.sleep(0.25)
     try:
