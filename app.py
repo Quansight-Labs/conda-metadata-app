@@ -5,6 +5,7 @@ from contextlib import closing
 from datetime import datetime
 from difflib import unified_diff
 from inspect import cleandoc
+from io import StringIO
 from tempfile import gettempdir
 
 if not os.environ.get("CACHE_DIR"):
@@ -20,12 +21,15 @@ from conda_forge_metadata.artifact_info.info_json import get_artifact_info_as_js
 from conda_forge_metadata.feedstock_outputs import package_to_feedstock
 from conda_package_streaming.package_streaming import stream_conda_component
 from conda_package_streaming.url import conda_reader_for_url
+from ruamel.yaml import YAML
 from streamlit.logger import get_logger
 from xml.etree import ElementTree as ET
 
 from version_order import VersionOrder
 
-
+yaml = YAML(typ="safe")
+yaml.allow_duplicate_keys = True
+yaml.default_flow_style = False
 logger = get_logger(__name__)
 st.set_page_config(
     page_title="conda metadata browser",
@@ -604,8 +608,10 @@ if isinstance(data, dict):
                 st.write("### Run exports")
                 if not hasattr(run_exports, "items"):
                     run_exports = {"weak": run_exports}
-                text = "\n".join([f"{key}:\n- {'- '.join(value)}" for key, value in run_exports.items()])
-                st.code(text, language="yaml", line_numbers=True)
+                memfile = StringIO()
+                yaml.dump(run_exports, memfile)
+                memfile.seek(0)
+                st.code(memfile.getvalue(), language="yaml", line_numbers=True)
 
         st.markdown(" ")
 
