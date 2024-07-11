@@ -368,9 +368,9 @@ with st.sidebar:
     )
     _available_subdirs = subdirs(package_name, channel)
     _best_subdir, _best_version = _best_version_in_subdir(package_name, channel)
-    if _best_subdir and not st.session_state.subdir:
+    if _best_subdir and not getattr(st.session_state, "subdir", None):
         st.session_state.subdir = _best_subdir
-    if _best_version and not st.session_state.version:
+    if _best_version and not getattr(st.session_state, "version", None):
         st.session_state.version = _best_version
     
     subdir = st.selectbox(
@@ -396,7 +396,7 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
     _build_options = builds(package_name, subdir, version, channel)
-    if _build_options and not st.session_state.build:
+    if _build_options and not getattr(st.session_state, "build", None):
         st.session_state.build = _build_options[0]
     build = st.selectbox(
         "Select a build:",
@@ -404,7 +404,7 @@ with st.sidebar:
         key="build",
     )
     _extension_options = extensions(package_name, subdir, version, build, channel)
-    if _extension_options and not st.session_state.extension:
+    if _extension_options and not getattr(st.session_state, "extension", None):
         st.session_state.extension = _extension_options[0]
     extension = st.selectbox(
         "Select an extension:",
