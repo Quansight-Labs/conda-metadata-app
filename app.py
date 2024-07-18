@@ -388,13 +388,14 @@ with st.sidebar:
         options=versions(package_name, subdir, channel),
         key="version",
     )
-    # Add a small message if a newer version is available in noarch or native subdir
+    # Add a small message if a newer version is available in a different subdir, and
+    # the currently chosen version is the newest in the current subdir
     if (
         _best_version
         and version
+        and version == versions(package_name, subdir, channel)[0]
         and VersionOrder(_best_version) > VersionOrder(version)
         and _best_subdir != subdir
-        and "noarch" in (_best_subdir, subdir)
     ):
         st.markdown(
             f"<sup>ℹ️ v{_best_version} is available for {_best_subdir}</sup>",
