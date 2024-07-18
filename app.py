@@ -161,7 +161,9 @@ def versions(package_name, subdir, channel="conda-forge"):
         {
             pkg["version"]: None
             for pkg in data
-            if pkg["attrs"]["subdir"] == subdir and "main" in pkg["labels"]
+            if pkg["attrs"]["subdir"] == subdir
+            and "main" in pkg["labels"]
+            and "broken" not in pkg["labels"]
         },
         key=VersionOrder,
         reverse=True,
@@ -175,7 +177,10 @@ def builds(package_name, subdir, version, channel="conda-forge"):
     build_str_to_num = {
         pkg["attrs"]["build"]: pkg["attrs"]["build_number"]
         for pkg in data
-        if pkg["attrs"]["subdir"] == subdir and pkg["version"] == version
+        if pkg["attrs"]["subdir"] == subdir
+        and pkg["version"] == version
+        and "main" in pkg["labels"]
+        and "broken" not in pkg["labels"]
     }
     return [
         k
