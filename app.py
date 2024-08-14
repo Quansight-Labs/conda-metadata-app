@@ -544,8 +544,8 @@ elif channel and not package_name and not subdir and not version and not build a
     data = "show_latest"
 elif channel and package_name and not subdir and not version and not with_broken:
     data = (
-        f"error:No artifacts found for `{package_name}` but broken packages are omitted. "
-        "Go to the Settings tab to toggle."
+        f"error:No artifacts found for `{package_name}` but broken packages might be omitted. "
+        "Toggle the option in the sidebar to show potential matches."
     )
 else:
     data = ""
