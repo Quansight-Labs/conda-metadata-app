@@ -307,8 +307,11 @@ def parse_url_params():
                         rest_of_artifact = artifact
                     try:
                         package_name, version, build = rest_of_artifact.rsplit("-", 2)
+                        if not version[0].isdigit():
+                            package_name = rest_of_artifact
+                            version, build = None, None
                     except Exception:
-                        package_name = artifact
+                        package_name = rest_of_artifact
     elif "path" in url_params:
         path = url_params["path"]
     elif url_params:
