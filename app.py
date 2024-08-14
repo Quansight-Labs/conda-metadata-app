@@ -337,6 +337,9 @@ def parse_url_params():
                     elif artifact.endswith(".tar.bz2"):
                         extension = "tar.bz2"
                         rest_of_artifact = artifact[:-len(".tar.bz2")]
+                    elif artifact.endswith("."):
+                        extension = None
+                        rest_of_artifact = artifact.rstrip(".")
                     else:
                         extension = None
                         rest_of_artifact = artifact
