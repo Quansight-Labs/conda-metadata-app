@@ -406,81 +406,90 @@ with st.sidebar:
         "If you need programmatic usage, check the [REST API]"
         "(https://condametadata-1-n5494491.deta.app).",
     )
-    with_broken = st.checkbox("List broken", value=False, key="with_broken")
-    channel = st.selectbox(
-        "Select a channel:",
-        CHANNELS,
-        key="channel",
-        # Use the user provided channel (via query params) if possible.
-        index=CHANNELS.index(url_params["channel"]) if url_params["channel"] in CHANNELS else 0,
-    )
-    package_name = st.selectbox(
-        "Enter a package name:",
-        options=package_names(channel),
-        key="package_name",
-    )
-    _available_subdirs = subdirs(package_name, channel, with_broken=with_broken)
-    _best_subdir, _best_version = _best_version_in_subdir(package_name, channel)
-    if _best_subdir and not getattr(st.session_state, "subdir", None):
-        st.session_state.subdir = _best_subdir
-    if _best_version and not getattr(st.session_state, "version", None):
-        st.session_state.version = _best_version
-    
-    subdir = st.selectbox(
-        "Select a subdir:",
-        options=_available_subdirs,
-        key="subdir",
-    )
-    version = st.selectbox(
-        "Select a version:",
-        options=versions(package_name, subdir, channel, with_broken=with_broken),
-        key="version",
-    )
-    # Add a small message if a newer version is available in a different subdir, and
-    # the currently chosen version is the newest in the current subdir
-    if (
-        _best_version
-        and version
-        and version == versions(package_name, subdir, channel)[0]
-        and VersionOrder(_best_version) > VersionOrder(version)
-        and _best_subdir != subdir
-    ):
-        st.markdown(
-            f"<sup>ℹ️ v{_best_version} is available for {_best_subdir}</sup>",
-            unsafe_allow_html=True,
+    tab1, tab2 = st.tabs(["Packages", "Settings"])
+    with tab1:
+        channel = st.selectbox(
+            "Select a channel:",
+            CHANNELS,
+            key="channel",
+            # Use the user provided channel (via query params) if possible.
+            index=CHANNELS.index(url_params["channel"]) if url_params["channel"] in CHANNELS else 0,
         )
-    _build_options = builds(package_name, subdir, version, channel, with_broken=with_broken)
-    if _build_options and not getattr(st.session_state, "build", None):
-        st.session_state.build = _build_options[0]
-    build = st.selectbox(
-        "Select a build:",
-        options=_build_options,
-        key="build",
-    )
-    _extension_options = extensions(package_name, subdir, version, build, channel)
-    if _extension_options and not getattr(st.session_state, "extension", None):
-        st.session_state.extension = _extension_options[0]
-    extension = st.selectbox(
-        "Select an extension:",
-        options=_extension_options,
-        key="extension",
-    )   
-    if channel == "conda-forge":
-        with_patches = st.checkbox(
-            "Show patches",
+    with tab2:
+        with_broken = st.checkbox(
+            "List broken",
             value=False,
-            key="with_patches",
-            help="Requires extra API calls. Slow!",
+            key="with_broken",
+            help="Include broken packages in the list of versions and builds.",
         )
-        mark_archived_feedstocks = st.checkbox(
-            "Mark archived feedstocks",
-            value=False,
-            key="mark_archived_feedstocks",
-            help="Requires extra API calls. Slow!",
+        if channel == "conda-forge":
+            with_patches = st.checkbox(
+                "Show patched metadata",
+                value=False,
+                key="with_patches",
+                help="Requires extra API calls. Slow!",
+            )
+            mark_archived_feedstocks = st.checkbox(
+                "Mark archived feedstocks",
+                value=False,
+                key="mark_archived_feedstocks",
+                help="Requires extra API calls. Slow!",
+            )
+        else:
+            with_patches = False
+            mark_archived_feedstocks = False
+    with tab1:
+        package_name = st.selectbox(
+            "Enter a package name:",
+            options=package_names(channel),
+            key="package_name",
         )
-    else:
-        with_patches = False
-        mark_archived_feedstocks = False
+        _available_subdirs = subdirs(package_name, channel, with_broken=with_broken)
+        _best_subdir, _best_version = _best_version_in_subdir(package_name, channel)
+        if _best_subdir and not getattr(st.session_state, "subdir", None):
+            st.session_state.subdir = _best_subdir
+        if _best_version and not getattr(st.session_state, "version", None):
+            st.session_state.version = _best_version
+
+        subdir = st.selectbox(
+            "Select a subdir:",
+            options=_available_subdirs,
+            key="subdir",
+        )
+        version = st.selectbox(
+            "Select a version:",
+            options=versions(package_name, subdir, channel, with_broken=with_broken),
+            key="version",
+        )
+        # Add a small message if a newer version is available in a different subdir, and
+        # the currently chosen version is the newest in the current subdir
+        if (
+            _best_version
+            and version
+            and version == versions(package_name, subdir, channel)[0]
+            and VersionOrder(_best_version) > VersionOrder(version)
+            and _best_subdir != subdir
+        ):
+            st.markdown(
+                f"<sup>ℹ️ v{_best_version} is available for {_best_subdir}</sup>",
+                unsafe_allow_html=True,
+            )
+        _build_options = builds(package_name, subdir, version, channel, with_broken=with_broken)
+        if _build_options and not getattr(st.session_state, "build", None):
+            st.session_state.build = _build_options[0]
+        build = st.selectbox(
+            "Select a build:",
+            options=_build_options,
+            key="build",
+        )
+        _extension_options = extensions(package_name, subdir, version, build, channel, with_broken=with_broken)
+        if _extension_options and not getattr(st.session_state, "extension", None):
+            st.session_state.extension = _extension_options[0]
+        extension = st.selectbox(
+            "Select an extension:",
+            options=_extension_options,
+            key="extension",
+        )
 
 
 def input_value_so_far():
@@ -489,14 +498,14 @@ def input_value_so_far():
         value = f"{channel}/"
     if package_name:
         if subdir:
-            value = f"{value}{subdir}::"
-        value = f"{value}{package_name}-"
+            value += f"{subdir}::"
+        value += f"{package_name}-"
         if version:
-            value = f"{value}{version}-"
+            value += f"{version}-"
             if build:
-                value = f"{value}{build}."
+                value += f"{build}."
                 if extension:
-                    value = f"{value}{extension}"
+                    value += extension
     return value
 
 
@@ -550,6 +559,11 @@ elif channel and not package_name and not subdir and not version and not build a
     st.query_params.clear()
     st.query_params.q = channel
     data = "show_latest"
+elif channel and package_name and not subdir and not version and not build and not with_broken:
+    data = (
+        f"error:No artifacts found for `{package_name}` but broken packages are omitted. "
+        "Go to the Settings tab to toggle."
+    )
 else:
     data = ""
 
@@ -601,7 +615,7 @@ if isinstance(data, dict):
             f"[ghcr](https://github.com/orgs/channel-mirrors/packages/container/package/{channel}%2F{subdir}%2F{data['name']})",
             f"[prefix](https://prefix.dev/channels/{channel}/packages/{data['name']})",
         ]
-    dashboard_urls = " · ".join(dashboard_urls) 
+    dashboard_urls = " · ".join(dashboard_urls)
     build_str = data.get("index", {}).get("build", "*N/A*")
     if build_str == "*N/A*":
         download = "*N/A*"
@@ -640,7 +654,7 @@ if isinstance(data, dict):
             | `{channel}` | `{subdir}` | `{bar_esc(build_str)}` | `{extension}` |
             | **License** | **Uploaded** | **Maintainers** | **Provenance** |
             | `{bar_esc(about.get("license", "*N/A*"))}` | {uploaded} | {maintainers} | {provenance} |
-            | **Links:** | {download} | {project_urls} | {dashboard_urls} | 
+            | **Links:** | {download} | {project_urls} | {dashboard_urls} |
             """
         )
     )
@@ -703,3 +717,7 @@ elif data == "show_latest":
     st.markdown(f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})")
     st.markdown(f"> Last update: {data.find('channel/pubDate').text}.")
     st.markdown("\n".join(table))
+elif isinstance(data, str) and data.startswith("error:"):
+    st.error(data[6:])
+elif not data:
+    st.info("Nothing to show. Did you fill all fields in the 'Packages' tab?")
