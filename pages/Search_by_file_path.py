@@ -76,7 +76,7 @@ if path_to_search:
         if channel == "cf":
             channel = "conda-forge"
         lines.append(
-            f"- [`{channel}/{subdir}::{artifact}`](/?q={channel}/{subdir}/{artifact})"
+            f"- [`{channel}/{subdir}::{artifact}`](/?q={channel}/{subdir}/{artifact}&with_broken=true)"
         )
     st.write("\n".join(lines))
 else:

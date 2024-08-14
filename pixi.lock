@@ -555,14 +555,14 @@ packages:
 - kind: pypi
   name: charset-normalizer
   version: 3.3.2
-  url: https://files.pythonhosted.org/packages/cc/94/f7cf5e5134175de79ad2059edf2adce18e0685ebdb9227ff0139975d0e93/charset_normalizer-3.3.2-cp310-cp310-macosx_10_9_x86_64.whl
-  sha256: 06435b539f889b1f6f4ac1758871aae42dc3a8c0e24ac9e60c2384973ad73027
+  url: https://files.pythonhosted.org/packages/46/6a/d5c26c41c49b546860cc1acabdddf48b0b3fb2685f4f5617ac59261b44ae/charset_normalizer-3.3.2-cp310-cp310-macosx_11_0_arm64.whl
+  sha256: 9063e24fdb1e498ab71cb7419e24622516c4a04476b17a2dab57e8baa30d6e03
   requires_python: '>=3.7.0'
 - kind: pypi
   name: charset-normalizer
   version: 3.3.2
-  url: https://files.pythonhosted.org/packages/46/6a/d5c26c41c49b546860cc1acabdddf48b0b3fb2685f4f5617ac59261b44ae/charset_normalizer-3.3.2-cp310-cp310-macosx_11_0_arm64.whl
-  sha256: 9063e24fdb1e498ab71cb7419e24622516c4a04476b17a2dab57e8baa30d6e03
+  url: https://files.pythonhosted.org/packages/cc/94/f7cf5e5134175de79ad2059edf2adce18e0685ebdb9227ff0139975d0e93/charset_normalizer-3.3.2-cp310-cp310-macosx_10_9_x86_64.whl
+  sha256: 06435b539f889b1f6f4ac1758871aae42dc3a8c0e24ac9e60c2384973ad73027
   requires_python: '>=3.7.0'
 - kind: pypi
   name: click
@@ -1047,14 +1047,14 @@ packages:
 - kind: pypi
   name: markupsafe
   version: 2.1.5
-  url: https://files.pythonhosted.org/packages/6a/4a/a4d49415e600bacae038c67f9fecc1d5433b9d3c71a4de6f33537b89654c/MarkupSafe-2.1.5-cp310-cp310-macosx_10_9_x86_64.whl
-  sha256: 72b6be590cc35924b02c78ef34b467da4ba07e4e0f0454a2c5907f473fc50ce5
+  url: https://files.pythonhosted.org/packages/e4/54/ad5eb37bf9d51800010a74e4665425831a9db4e7c4e0fde4352e391e808e/MarkupSafe-2.1.5-cp310-cp310-macosx_10_9_universal2.whl
+  sha256: a17a92de5231666cfbe003f0e4b9b3a7ae3afb1ec2845aadc2bacc93ff85febc
   requires_python: '>=3.7'
 - kind: pypi
   name: markupsafe
   version: 2.1.5
-  url: https://files.pythonhosted.org/packages/e4/54/ad5eb37bf9d51800010a74e4665425831a9db4e7c4e0fde4352e391e808e/MarkupSafe-2.1.5-cp310-cp310-macosx_10_9_universal2.whl
-  sha256: a17a92de5231666cfbe003f0e4b9b3a7ae3afb1ec2845aadc2bacc93ff85febc
+  url: https://files.pythonhosted.org/packages/6a/4a/a4d49415e600bacae038c67f9fecc1d5433b9d3c71a4de6f33537b89654c/MarkupSafe-2.1.5-cp310-cp310-macosx_10_9_x86_64.whl
+  sha256: 72b6be590cc35924b02c78ef34b467da4ba07e4e0f0454a2c5907f473fc50ce5
   requires_python: '>=3.7'
 - kind: pypi
   name: mdurl
@@ -1119,14 +1119,14 @@ packages:
 - kind: pypi
   name: numpy
   version: 1.26.4
-  url: https://files.pythonhosted.org/packages/a7/94/ace0fdea5241a27d13543ee117cbc65868e82213fb31a8eb7fe9ff23f313/numpy-1.26.4-cp310-cp310-macosx_10_9_x86_64.whl
-  sha256: 9ff0f4f29c51e2803569d7a51c2304de5554655a60c5d776e35b4a41413830d0
+  url: https://files.pythonhosted.org/packages/20/f7/b24208eba89f9d1b58c1668bc6c8c4fd472b20c45573cb767f59d49fb0f6/numpy-1.26.4-cp310-cp310-macosx_11_0_arm64.whl
+  sha256: 2e4ee3380d6de9c9ec04745830fd9e2eccb3e6cf790d39d7b98ffd19b0dd754a
   requires_python: '>=3.9'
 - kind: pypi
   name: numpy
   version: 1.26.4
-  url: https://files.pythonhosted.org/packages/20/f7/b24208eba89f9d1b58c1668bc6c8c4fd472b20c45573cb767f59d49fb0f6/numpy-1.26.4-cp310-cp310-macosx_11_0_arm64.whl
-  sha256: 2e4ee3380d6de9c9ec04745830fd9e2eccb3e6cf790d39d7b98ffd19b0dd754a
+  url: https://files.pythonhosted.org/packages/a7/94/ace0fdea5241a27d13543ee117cbc65868e82213fb31a8eb7fe9ff23f313/numpy-1.26.4-cp310-cp310-macosx_10_9_x86_64.whl
+  sha256: 9ff0f4f29c51e2803569d7a51c2304de5554655a60c5d776e35b4a41413830d0
   requires_python: '>=3.9'
 - kind: conda
   name: openssl
@@ -1419,8 +1419,8 @@ packages:
 - kind: pypi
   name: pandas
   version: 2.2.2
-  url: https://files.pythonhosted.org/packages/d1/2d/39600d073ea70b9cafdc51fab91d69c72b49dd92810f24cb5ac6631f387f/pandas-2.2.2-cp310-cp310-macosx_10_9_x86_64.whl
-  sha256: 90c6fca2acf139569e74e8781709dccb6fe25940488755716d1d354d6bc58bce
+  url: https://files.pythonhosted.org/packages/fd/4b/0cd38e68ab690b9df8ef90cba625bf3f93b82d1c719703b8e1b333b2c72d/pandas-2.2.2-cp310-cp310-macosx_11_0_arm64.whl
+  sha256: c7adfc142dac335d8c1e0dcbd37eb8617eac386596eb9e1a1b77791cf2498238
   requires_dist:
   - numpy>=1.22.4 ; python_version < '3.11'
   - numpy>=1.23.2 ; python_version == '3.11'
@@ -1511,8 +1511,8 @@ packages:
 - kind: pypi
   name: pandas
   version: 2.2.2
-  url: https://files.pythonhosted.org/packages/fd/4b/0cd38e68ab690b9df8ef90cba625bf3f93b82d1c719703b8e1b333b2c72d/pandas-2.2.2-cp310-cp310-macosx_11_0_arm64.whl
-  sha256: c7adfc142dac335d8c1e0dcbd37eb8617eac386596eb9e1a1b77791cf2498238
+  url: https://files.pythonhosted.org/packages/d1/2d/39600d073ea70b9cafdc51fab91d69c72b49dd92810f24cb5ac6631f387f/pandas-2.2.2-cp310-cp310-macosx_10_9_x86_64.whl
+  sha256: 90c6fca2acf139569e74e8781709dccb6fe25940488755716d1d354d6bc58bce
   requires_dist:
   - numpy>=1.22.4 ; python_version < '3.11'
   - numpy>=1.23.2 ; python_version == '3.11'
@@ -1659,8 +1659,8 @@ packages:
 - kind: pypi
   name: pillow
   version: 10.3.0
-  url: https://files.pythonhosted.org/packages/e3/a4/cd3e60cda9ff7aa35eeb88325f8fb06898fb49523e367bacc35a5546317a/pillow-10.3.0-cp310-cp310-macosx_10_10_x86_64.whl
-  sha256: 90b9e29824800e90c84e4022dd5cc16eb2d9605ee13f05d47641eb183cd73d45
+  url: https://files.pythonhosted.org/packages/d4/0e/e344d6532f30b3b8de3d7a36fd05d5a43e4164afd1b41882529e766ef959/pillow-10.3.0-cp310-cp310-macosx_11_0_arm64.whl
+  sha256: a2c405445c79c3f5a124573a051062300936b0281fee57637e706453e452746c
   requires_dist:
   - furo ; extra == 'docs'
   - olefile ; extra == 'docs'
@@ -1687,8 +1687,8 @@ packages:
 - kind: pypi
   name: pillow
   version: 10.3.0
-  url: https://files.pythonhosted.org/packages/d4/0e/e344d6532f30b3b8de3d7a36fd05d5a43e4164afd1b41882529e766ef959/pillow-10.3.0-cp310-cp310-macosx_11_0_arm64.whl
-  sha256: a2c405445c79c3f5a124573a051062300936b0281fee57637e706453e452746c
+  url: https://files.pythonhosted.org/packages/e3/a4/cd3e60cda9ff7aa35eeb88325f8fb06898fb49523e367bacc35a5546317a/pillow-10.3.0-cp310-cp310-macosx_10_10_x86_64.whl
+  sha256: 90b9e29824800e90c84e4022dd5cc16eb2d9605ee13f05d47641eb183cd73d45
   requires_dist:
   - furo ; extra == 'docs'
   - olefile ; extra == 'docs'
@@ -1770,16 +1770,16 @@ packages:
 - kind: pypi
   name: pyarrow
   version: 16.0.0
-  url: https://files.pythonhosted.org/packages/fd/5c/a4349f50b36382d3f40b304b91a3587ac433baceed9bec2434d663393a51/pyarrow-16.0.0-cp310-cp310-macosx_10_15_x86_64.whl
-  sha256: 22a1fdb1254e5095d629e29cd1ea98ed04b4bbfd8e42cc670a6b639ccc208b60
+  url: https://files.pythonhosted.org/packages/5b/04/c2a6f3ae840d96a00de2e07d68a3d30591b413b15b4385242e47e2ae0e97/pyarrow-16.0.0-cp310-cp310-macosx_11_0_arm64.whl
+  sha256: 574a00260a4ed9d118a14770edbd440b848fcae5a3024128be9d0274dbcaf858
   requires_dist:
   - numpy>=1.16.6
   requires_python: '>=3.8'
 - kind: pypi
   name: pyarrow
   version: 16.0.0
-  url: https://files.pythonhosted.org/packages/5b/04/c2a6f3ae840d96a00de2e07d68a3d30591b413b15b4385242e47e2ae0e97/pyarrow-16.0.0-cp310-cp310-macosx_11_0_arm64.whl
-  sha256: 574a00260a4ed9d118a14770edbd440b848fcae5a3024128be9d0274dbcaf858
+  url: https://files.pythonhosted.org/packages/fd/5c/a4349f50b36382d3f40b304b91a3587ac433baceed9bec2434d663393a51/pyarrow-16.0.0-cp310-cp310-macosx_10_15_x86_64.whl
+  sha256: 22a1fdb1254e5095d629e29cd1ea98ed04b4bbfd8e42cc670a6b639ccc208b60
   requires_dist:
   - numpy>=1.16.6
   requires_python: '>=3.8'
@@ -2020,14 +2020,14 @@ packages:
 - kind: pypi
   name: rpds-py
   version: 0.18.1
-  url: https://files.pythonhosted.org/packages/a1/eb/5b7591bb8d9f710df243a3b6304a2b70db5a426a2bd478c2912f8b81b806/rpds_py-0.18.1-cp310-cp310-macosx_10_12_x86_64.whl
-  sha256: d31dea506d718693b6b2cffc0648a8929bdc51c70a311b2770f09611caa10d53
+  url: https://files.pythonhosted.org/packages/b9/9a/f1cce2481968d0ff1301d6da02bb977d7c7dc2ad9d218281ead38cc7f1ae/rpds_py-0.18.1-cp310-cp310-macosx_11_0_arm64.whl
+  sha256: 732672fbc449bab754e0b15356c077cc31566df874964d4801ab14f71951ea80
   requires_python: '>=3.8'
 - kind: pypi
   name: rpds-py
   version: 0.18.1
-  url: https://files.pythonhosted.org/packages/b9/9a/f1cce2481968d0ff1301d6da02bb977d7c7dc2ad9d218281ead38cc7f1ae/rpds_py-0.18.1-cp310-cp310-macosx_11_0_arm64.whl
-  sha256: 732672fbc449bab754e0b15356c077cc31566df874964d4801ab14f71951ea80
+  url: https://files.pythonhosted.org/packages/a1/eb/5b7591bb8d9f710df243a3b6304a2b70db5a426a2bd478c2912f8b81b806/rpds_py-0.18.1-cp310-cp310-macosx_10_12_x86_64.whl
+  sha256: d31dea506d718693b6b2cffc0648a8929bdc51c70a311b2770f09611caa10d53
   requires_python: '>=3.8'
 - kind: pypi
   name: ruamel-yaml
@@ -2345,14 +2345,14 @@ packages:
 - kind: pypi
   name: tornado
   version: '6.4'
-  url: https://files.pythonhosted.org/packages/34/7a/e7ec972db24513ea69ac7132c1a5eef62309dc978566a4afffa314417a45/tornado-6.4-cp38-abi3-macosx_10_9_x86_64.whl
-  sha256: 27787de946a9cffd63ce5814c33f734c627a87072ec7eed71f7fc4417bb16263
+  url: https://files.pythonhosted.org/packages/4a/2e/3ba930e3af171847d610e07ae878e04fcb7e4d7822f1a2d29a27b128ea24/tornado-6.4-cp38-abi3-macosx_10_9_universal2.whl
+  sha256: 02ccefc7d8211e5a7f9e8bc3f9e5b0ad6262ba2fbb683a6443ecc804e5224ce0
   requires_python: '>=3.8'
 - kind: pypi
   name: tornado
   version: '6.4'
-  url: https://files.pythonhosted.org/packages/4a/2e/3ba930e3af171847d610e07ae878e04fcb7e4d7822f1a2d29a27b128ea24/tornado-6.4-cp38-abi3-macosx_10_9_universal2.whl
-  sha256: 02ccefc7d8211e5a7f9e8bc3f9e5b0ad6262ba2fbb683a6443ecc804e5224ce0
+  url: https://files.pythonhosted.org/packages/34/7a/e7ec972db24513ea69ac7132c1a5eef62309dc978566a4afffa314417a45/tornado-6.4-cp38-abi3-macosx_10_9_x86_64.whl
+  sha256: 27787de946a9cffd63ce5814c33f734c627a87072ec7eed71f7fc4417bb16263
   requires_python: '>=3.8'
 - kind: pypi
   name: typing-extensions
@@ -2549,14 +2549,14 @@ packages:
 - kind: pypi
   name: wrapt
   version: 1.16.0
-  url: https://files.pythonhosted.org/packages/a8/c6/5375258add3777494671d8cec27cdf5402abd91016dee24aa2972c61fedf/wrapt-1.16.0-cp310-cp310-macosx_10_9_x86_64.whl
-  sha256: ffa565331890b90056c01db69c0fe634a776f8019c143a5ae265f9c6bc4bd6d4
+  url: https://files.pythonhosted.org/packages/32/12/e11adfde33444986135d8881b401e4de6cbb4cced046edc6b464e6ad7547/wrapt-1.16.0-cp310-cp310-macosx_11_0_arm64.whl
+  sha256: e4fdb9275308292e880dcbeb12546df7f3e0f96c6b41197e0cf37d2826359020
   requires_python: '>=3.6'
 - kind: pypi
   name: wrapt
   version: 1.16.0
-  url: https://files.pythonhosted.org/packages/32/12/e11adfde33444986135d8881b401e4de6cbb4cced046edc6b464e6ad7547/wrapt-1.16.0-cp310-cp310-macosx_11_0_arm64.whl
-  sha256: e4fdb9275308292e880dcbeb12546df7f3e0f96c6b41197e0cf37d2826359020
+  url: https://files.pythonhosted.org/packages/a8/c6/5375258add3777494671d8cec27cdf5402abd91016dee24aa2972c61fedf/wrapt-1.16.0-cp310-cp310-macosx_10_9_x86_64.whl
+  sha256: ffa565331890b90056c01db69c0fe634a776f8019c143a5ae265f9c6bc4bd6d4
   requires_python: '>=3.6'
 - kind: conda
   name: xz
@@ -2632,8 +2632,8 @@ packages:
 - kind: pypi
   name: zstandard
   version: 0.22.0
-  url: https://files.pythonhosted.org/packages/aa/a4/b7cc74e836ec006427d18439c12b7898697c1eae91b06ffdfa63da8cd041/zstandard-0.22.0-cp310-cp310-macosx_10_9_x86_64.whl
-  sha256: 275df437ab03f8c033b8a2c181e51716c32d831082d93ce48002a5227ec93019
+  url: https://files.pythonhosted.org/packages/fc/e5/a1fa6f70764777553cb8ab668690ba793ebf512b3d415e28720d2275d445/zstandard-0.22.0-cp310-cp310-macosx_11_0_arm64.whl
+  sha256: 2ac9957bc6d2403c4772c890916bf181b2653640da98f32e04b96e4d6fb3252a
   requires_dist:
   - cffi>=1.11 ; platform_python_implementation == 'PyPy'
   - cffi>=1.11 ; extra == 'cffi'
@@ -2641,8 +2641,8 @@ packages:
 - kind: pypi
   name: zstandard
   version: 0.22.0
-  url: https://files.pythonhosted.org/packages/fc/e5/a1fa6f70764777553cb8ab668690ba793ebf512b3d415e28720d2275d445/zstandard-0.22.0-cp310-cp310-macosx_11_0_arm64.whl
-  sha256: 2ac9957bc6d2403c4772c890916bf181b2653640da98f32e04b96e4d6fb3252a
+  url: https://files.pythonhosted.org/packages/aa/a4/b7cc74e836ec006427d18439c12b7898697c1eae91b06ffdfa63da8cd041/zstandard-0.22.0-cp310-cp310-macosx_10_9_x86_64.whl
+  sha256: 275df437ab03f8c033b8a2c181e51716c32d831082d93ce48002a5227ec93019
   requires_dist:
   - cffi>=1.11 ; platform_python_implementation == 'PyPy'
   - cffi>=1.11 ; extra == 'cffi'

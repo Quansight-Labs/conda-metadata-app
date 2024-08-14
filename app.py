@@ -135,14 +135,14 @@ def package_names(channel="conda-forge"):
     )
 
 
-def subdirs(package_name, channel="conda-forge"):
+def subdirs(package_name, channel="conda-forge", with_broken=False):
     if not package_name:
         return []
     return sorted(
         [
             subdir 
             for subdir in channeldata(channel)["packages"][package_name]["subdirs"]
-            if versions(package_name, subdir, channel)
+            if versions(package_name, subdir, channel, with_broken=with_broken)
         ]
     )
 
@@ -150,16 +150,20 @@ def subdirs(package_name, channel="conda-forge"):
 def _best_version_in_subdir(package_name, channel="conda-forge"):
     if not package_name:
         return None, None
-    return max(
+    subdirs_plus_best_version = sorted(
         [
             (subdir, versions(package_name, subdir, channel)[0])
             for subdir in subdirs(package_name, channel)
         ],
         key=lambda x: VersionOrder(x[1]),
+        reverse=True,
     )
+    if subdirs_plus_best_version:
+        return subdirs_plus_best_version[0]
+    return None, None
 
 
-def versions(package_name, subdir, channel="conda-forge"):
+def versions(package_name, subdir, channel="conda-forge", with_broken=False):
     if not package_name or not subdir:
         return []
     data = api_data(package_name, channel)
@@ -168,15 +172,18 @@ def versions(package_name, subdir, channel="conda-forge"):
             pkg["version"]: None
             for pkg in data
             if pkg["attrs"]["subdir"] == subdir
-            and "main" in pkg["labels"]
-            and "broken" not in pkg["labels"]
+            and with_broken
+            or (
+                "main" in pkg["labels"]
+                and "broken" not in pkg["labels"]
+            )
         },
         key=VersionOrder,
         reverse=True,
     )
 
 
-def builds(package_name, subdir, version, channel="conda-forge"):
+def builds(package_name, subdir, version, channel="conda-forge", with_broken=False):
     if not package_name or not subdir or not version:
         return []
     data = api_data(package_name, channel)
@@ -185,8 +192,11 @@ def builds(package_name, subdir, version, channel="conda-forge"):
         for pkg in data
         if pkg["attrs"]["subdir"] == subdir
         and pkg["version"] == version
-        and "main" in pkg["labels"]
-        and "broken" not in pkg["labels"]
+        and with_broken
+        or (
+            "main" in pkg["labels"]
+            and "broken" not in pkg["labels"]
+        )
     }
     return [
         k
@@ -196,7 +206,7 @@ def builds(package_name, subdir, version, channel="conda-forge"):
     ]
 
 
-def extensions(package_name, subdir, version, build, channel="conda-forge"):
+def extensions(package_name, subdir, version, build, channel="conda-forge", with_broken=False):
     if not package_name or not subdir or not version or not build:
         return []
     if channel.startswith("pkgs/"):
@@ -209,9 +219,30 @@ def extensions(package_name, subdir, version, build, channel="conda-forge"):
             if pkg["attrs"]["subdir"] == subdir
             and pkg["version"] == version
             and pkg["attrs"]["build"] == build
+            and with_broken
+            or (
+                "main" in pkg["labels"]
+                and "broken" not in pkg["labels"]
+            )
         }
     )
 
+
+def _is_broken(package_name, subdir, version, build, extension, channel="conda-forge"):
+    if channel != "conda-forge":
+        return False  #  we don't know
+    data = api_data(package_name, channel)
+    for pkg in data:
+        if (
+            pkg["attrs"]["subdir"] == subdir 
+            and pkg["version"] == version 
+            and pkg["attrs"]["build"] == build
+            # and pkg["basename"].endswith(extension)
+        ):
+            print(pkg)
+            return "broken" in pkg["labels"] or "main" not in pkg["labels"]
+    return False
+            
 
 def patched_repodata(channel, subdir, artifact):
     patches = repodata_patches(channel)[subdir]
@@ -266,11 +297,15 @@ def parse_url_params():
     - q: channel/package_name
     - q: channel/subdir::package_name-version-build
     - q: channel/subdir/package_name-version-build.extension
+    - with_broken: true or false
     """
     channel, subdir, artifact, package_name, version, build, extension = [None] * 7
+    with_broken = False
     path = None
     url_params = st.query_params.to_dict()
     ok = True
+    if "with_broken" in url_params:
+        with_broken = url_params.pop("with_broken") == "true"
     if "q" in url_params:
         query = url_params["q"]
         if query in CHANNELS:  # channel only
@@ -325,6 +360,7 @@ def parse_url_params():
         "build": build,
         "extension": extension,
         "path": path,
+        "with_broken": with_broken
     }, ok
 
 
@@ -359,6 +395,8 @@ elif url_params["artifact"] and "channel" not in st.session_state:
         st.session_state.build = url_params["build"]
     if url_params["extension"] is not None:
         st.session_state.extension = url_params["extension"]
+    if url_params["with_broken"]:
+        st.session_state.with_broken = url_params["with_broken"]
 
 with st.sidebar:
     st.title(
@@ -368,6 +406,7 @@ with st.sidebar:
         "If you need programmatic usage, check the [REST API]"
         "(https://condametadata-1-n5494491.deta.app).",
     )
+    with_broken = st.checkbox("List broken", value=False, key="with_broken")
     channel = st.selectbox(
         "Select a channel:",
         CHANNELS,
@@ -380,7 +419,7 @@ with st.sidebar:
         options=package_names(channel),
         key="package_name",
     )
-    _available_subdirs = subdirs(package_name, channel)
+    _available_subdirs = subdirs(package_name, channel, with_broken=with_broken)
     _best_subdir, _best_version = _best_version_in_subdir(package_name, channel)
     if _best_subdir and not getattr(st.session_state, "subdir", None):
         st.session_state.subdir = _best_subdir
@@ -394,7 +433,7 @@ with st.sidebar:
     )
     version = st.selectbox(
         "Select a version:",
-        options=versions(package_name, subdir, channel),
+        options=versions(package_name, subdir, channel, with_broken=with_broken),
         key="version",
     )
     # Add a small message if a newer version is available in a different subdir, and
@@ -410,7 +449,7 @@ with st.sidebar:
             f"<sup>ℹ️ v{_best_version} is available for {_best_subdir}</sup>",
             unsafe_allow_html=True,
         )
-    _build_options = builds(package_name, subdir, version, channel)
+    _build_options = builds(package_name, subdir, version, channel, with_broken=with_broken)
     if _build_options and not getattr(st.session_state, "build", None):
         st.session_state.build = _build_options[0]
     build = st.selectbox(
@@ -425,10 +464,10 @@ with st.sidebar:
         "Select an extension:",
         options=_extension_options,
         key="extension",
-    )
+    )   
     if channel == "conda-forge":
         with_patches = st.checkbox(
-            "Show patches and broken packages",
+            "Show patches",
             value=False,
             key="with_patches",
             help="Requires extra API calls. Slow!",
@@ -495,6 +534,8 @@ if submitted or all([channel, subdir, package_name, version, build]):
     channel, subdir = channel_subdir.rsplit("/", 1)
     st.query_params.clear()
     st.query_params.q = f"{channel}/{subdir}/{artifact}"
+    if with_broken:
+        st.query_params.with_broken = str(with_broken).lower()
     with st.spinner("Fetching metadata..."):
         data = artifact_metadata(
             channel=channel,
@@ -542,6 +583,9 @@ if isinstance(data, dict):
 
     if with_patches:
         patched_data, yanked = patched_repodata(channel, subdir, artifact)
+    elif with_broken:
+        patched_data = {}
+        yanked = _is_broken(package_name, subdir, version, build, extension, channel)
     else:
         patched_data, yanked = {}, False
 
