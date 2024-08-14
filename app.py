@@ -147,13 +147,13 @@ def subdirs(package_name, channel="conda-forge", with_broken=False):
     )
 
 
-def _best_version_in_subdir(package_name, channel="conda-forge"):
+def _best_version_in_subdir(package_name, channel="conda-forge", with_broken=False):
     if not package_name:
         return None, None
     subdirs_plus_best_version = sorted(
         [
-            (subdir, versions(package_name, subdir, channel)[0])
-            for subdir in subdirs(package_name, channel)
+            (subdir, versions(package_name, subdir, channel, with_broken=with_broken)[0])
+            for subdir in subdirs(package_name, channel, with_broken=with_broken)
         ],
         key=lambda x: VersionOrder(x[1]),
         reverse=True,
@@ -394,95 +394,85 @@ elif url_params["artifact"] and "channel" not in st.session_state:
 with st.sidebar:
     st.title(
         "conda metadata browser",
-        help="Web UI to browse the conda package metadata exposed at "
-        "https://github.com/orgs/channel-mirrors/packages.\n\n "
-        "If you need programmatic usage, check the [REST API]"
-        "(https://condametadata-1-n5494491.deta.app).",
+        help="Web UI to browse the metadata of conda packages uploaded in public channels.",
     )
-    tab1, tab2 = st.tabs(["Packages", "Settings"])
-    with tab1:
-        channel = st.selectbox(
+    with_broken = st.checkbox(
+        "Include artifacts marked broken",
+        value=False,
+        key="with_broken",
+        help="Include broken packages in the list of versions and builds.",
+    )
+    with_patches = st.checkbox(
+        "Show patched metadata",
+        value=False,
+        key="with_patches",
+        help="Requires extra API calls. Slow! Only for conda-forge",
+    )
+    mark_archived_feedstocks = st.checkbox(
+        "Highlight provenance if archived",
+        value=False,
+        key="mark_archived_feedstocks",
+        help="If the source feedstock is archived, the text will be struck through. "
+        "Requires extra API calls. Slow! Only for conda-forge",
+    )
+    channel = st.selectbox(
             "Select a channel:",
             CHANNELS,
             key="channel",
             # Use the user provided channel (via query params) if possible.
             index=CHANNELS.index(url_params["channel"]) if url_params["channel"] in CHANNELS else 0,
         )
-    with tab2:
-        with_broken = st.checkbox(
-            "List broken",
-            value=False,
-            key="with_broken",
-            help="Include broken packages in the list of versions and builds.",
-        )
-        if channel == "conda-forge":
-            with_patches = st.checkbox(
-                "Show patched metadata",
-                value=False,
-                key="with_patches",
-                help="Requires extra API calls. Slow!",
-            )
-            mark_archived_feedstocks = st.checkbox(
-                "Mark archived feedstocks",
-                value=False,
-                key="mark_archived_feedstocks",
-                help="Requires extra API calls. Slow!",
-            )
-        else:
-            with_patches = False
-            mark_archived_feedstocks = False
-    with tab1:
-        package_name = st.selectbox(
-            "Enter a package name:",
-            options=package_names(channel),
-            key="package_name",
-        )
-        _available_subdirs = subdirs(package_name, channel, with_broken=with_broken)
-        _best_subdir, _best_version = _best_version_in_subdir(package_name, channel)
-        if _best_subdir and not getattr(st.session_state, "subdir", None):
-            st.session_state.subdir = _best_subdir
-        if _best_version and not getattr(st.session_state, "version", None):
-            st.session_state.version = _best_version
+    package_name = st.selectbox(
+        "Enter a package name:",
+        options=package_names(channel),
+        key="package_name",
+    )
+    _available_subdirs = subdirs(package_name, channel, with_broken=with_broken)
+    _best_subdir, _best_version = _best_version_in_subdir(package_name, channel, with_broken=with_broken)
+    if _best_subdir and not getattr(st.session_state, "subdir", None):
+        st.session_state.subdir = _best_subdir
+    if _best_version and not getattr(st.session_state, "version", None):
+        st.session_state.version = _best_version
 
-        subdir = st.selectbox(
-            "Select a subdir:",
-            options=_available_subdirs,
-            key="subdir",
+    subdir = st.selectbox(
+        "Select a subdir:",
+        options=_available_subdirs,
+        key="subdir",
+    )
+    version = st.selectbox(
+        "Select a version:",
+        options=versions(package_name, subdir, channel, with_broken=with_broken),
+        key="version",
+    )
+    # Add a small message if a newer version is available in a different subdir, and
+    # the currently chosen version is the newest in the current subdir
+    if (
+        _best_version
+        and version
+        and version == versions(package_name, subdir, channel, with_broken=with_broken)[0]
+        and VersionOrder(_best_version) > VersionOrder(version)
+        and _best_subdir != subdir
+    ):
+        st.markdown(
+            f"<sup>ℹ️ v{_best_version} is available for {_best_subdir}</sup>",
+            unsafe_allow_html=True,
         )
-        version = st.selectbox(
-            "Select a version:",
-            options=versions(package_name, subdir, channel, with_broken=with_broken),
-            key="version",
-        )
-        # Add a small message if a newer version is available in a different subdir, and
-        # the currently chosen version is the newest in the current subdir
-        if (
-            _best_version
-            and version
-            and version == versions(package_name, subdir, channel)[0]
-            and VersionOrder(_best_version) > VersionOrder(version)
-            and _best_subdir != subdir
-        ):
-            st.markdown(
-                f"<sup>ℹ️ v{_best_version} is available for {_best_subdir}</sup>",
-                unsafe_allow_html=True,
-            )
-        _build_options = builds(package_name, subdir, version, channel, with_broken=with_broken)
-        if _build_options and not getattr(st.session_state, "build", None):
-            st.session_state.build = _build_options[0]
-        build = st.selectbox(
-            "Select a build:",
-            options=_build_options,
-            key="build",
-        )
-        _extension_options = extensions(package_name, subdir, version, build, channel, with_broken=with_broken)
-        if _extension_options and not getattr(st.session_state, "extension", None):
-            st.session_state.extension = _extension_options[0]
-        extension = st.selectbox(
-            "Select an extension:",
-            options=_extension_options,
-            key="extension",
-        )
+    _build_options = builds(package_name, subdir, version, channel, with_broken=with_broken)
+    if _build_options and not getattr(st.session_state, "build", None):
+        st.session_state.build = _build_options[0]
+    build = st.selectbox(
+        "Select a build:",
+        options=_build_options,
+        key="build",
+    )
+    _extension_options = extensions(package_name, subdir, version, build, channel, with_broken=with_broken)
+    if _extension_options and not getattr(st.session_state, "extension", None):
+        st.session_state.extension = _extension_options[0]
+    extension = st.selectbox(
+        "Select an extension:",
+        options=_extension_options,
+        key="extension",
+    )
 
 
 def input_value_so_far():
@@ -552,7 +542,7 @@ elif channel and not package_name and not subdir and not version and not build a
     st.query_params.clear()
     st.query_params.q = channel
     data = "show_latest"
-elif channel and package_name and not subdir and not version and not build and not with_broken:
+elif channel and package_name and not subdir and not version and not with_broken:
     data = (
         f"error:No artifacts found for `{package_name}` but broken packages are omitted. "
         "Go to the Settings tab to toggle."
