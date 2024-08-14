@@ -590,11 +590,9 @@ if isinstance(data, dict):
 
     if with_patches:
         patched_data, yanked = patched_repodata(channel, subdir, artifact)
-    elif with_broken:
+    else:
         patched_data = {}
         yanked = _is_broken(package_name, subdir, version, build, extension, channel)
-    else:
-        patched_data, yanked = {}, False
 
     st.markdown(f'## {"❌ " if yanked else ""}{data["name"]} {data["version"]}')
     if yanked:
