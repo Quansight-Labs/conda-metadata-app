@@ -138,7 +138,13 @@ def package_names(channel="conda-forge"):
 def subdirs(package_name, channel="conda-forge"):
     if not package_name:
         return []
-    return sorted(channeldata(channel)["packages"][package_name]["subdirs"])
+    return sorted(
+        [
+            subdir 
+            for subdir in channeldata(channel)["packages"][package_name]["subdirs"]
+            if versions(package_name, subdir, channel)
+        ]
+    )
 
 
 def _best_version_in_subdir(package_name, channel="conda-forge"):
