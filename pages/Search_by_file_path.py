@@ -55,8 +55,6 @@ with c1:
         placeholder="Choose one path (type for autocomplete)",
         key="path_search_input",
         default=st.query_params.get("path"),
-        help="Autocomplete matches on full path components, basenames and extensions. "
-        "It won't match on partial paths or substrings.",
     )
 with c2:
     submitted = st.button(
@@ -97,6 +95,7 @@ else:
 
             Some good examples include:
 
+            - `libcuda`
             - `activate.bat`
             - `bin/conda`
             - `lib/python3.9/site-packages/numpy/core/include/numpy`
