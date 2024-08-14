@@ -57,7 +57,7 @@ def rssdata(channel="conda-forge"):
         r = requests.get(f"https://conda.anaconda.org/{channel}/rss.xml")
     r.raise_for_status()
     return ET.ElementTree(ET.fromstring(r.text))
-    
+
 
 @st.cache_resource(ttl=FIFTEEN_MINS, max_entries=10)
 def channeldata(channel="conda-forge"):
@@ -125,7 +125,7 @@ def package_names(channel="conda-forge"):
     for name in channeldata(channel)["packages"].keys():
         if channel == "pkgs/r":
             if name not in ("r", "rpy2", "rstudio") and not name.startswith(("r-", "_r-", "mro-")):
-                continue            
+                continue
         elif channel == "pkgs/msys2" and not name.startswith(("m2-", "m2w64-", "msys2-")):
             continue
         names.append(name)
@@ -140,7 +140,7 @@ def subdirs(package_name, channel="conda-forge", with_broken=False):
         return []
     return sorted(
         [
-            subdir 
+            subdir
             for subdir in channeldata(channel)["packages"][package_name]["subdirs"]
             if versions(package_name, subdir, channel, with_broken=with_broken)
         ]
@@ -172,11 +172,8 @@ def versions(package_name, subdir, channel="conda-forge", with_broken=False):
             pkg["version"]: None
             for pkg in data
             if pkg["attrs"]["subdir"] == subdir
-            and with_broken
-            or (
-                "main" in pkg["labels"]
-                and "broken" not in pkg["labels"]
-            )
+            and "main" in pkg["labels"]
+            and (with_broken or "broken" not in pkg["labels"])
         },
         key=VersionOrder,
         reverse=True,
@@ -192,11 +189,8 @@ def builds(package_name, subdir, version, channel="conda-forge", with_broken=Fal
         for pkg in data
         if pkg["attrs"]["subdir"] == subdir
         and pkg["version"] == version
-        and with_broken
-        or (
-            "main" in pkg["labels"]
-            and "broken" not in pkg["labels"]
-        )
+        and "main" in pkg["labels"]
+        and (with_broken or "broken" not in pkg["labels"])
     }
     return [
         k
@@ -212,18 +206,15 @@ def extensions(package_name, subdir, version, build, channel="conda-forge", with
     if channel.startswith("pkgs/"):
         return ["conda"]
     data = api_data(package_name, channel)
-    return list(
+    return sorted(
         {
             ("conda" if pkg["basename"].endswith(".conda") else "tar.bz2"): None
             for pkg in data
             if pkg["attrs"]["subdir"] == subdir
             and pkg["version"] == version
             and pkg["attrs"]["build"] == build
-            and with_broken
-            or (
-                "main" in pkg["labels"]
-                and "broken" not in pkg["labels"]
-            )
+            and "main" in pkg["labels"]
+            and (with_broken or "broken" not in pkg["labels"])
         }
     )
 
@@ -234,15 +225,14 @@ def _is_broken(package_name, subdir, version, build, extension, channel="conda-f
     data = api_data(package_name, channel)
     for pkg in data:
         if (
-            pkg["attrs"]["subdir"] == subdir 
-            and pkg["version"] == version 
+            pkg["attrs"]["subdir"] == subdir
+            and pkg["version"] == version
             and pkg["attrs"]["build"] == build
-            # and pkg["basename"].endswith(extension)
+            and pkg["basename"].endswith(extension)
         ):
-            print(pkg)
-            return "broken" in pkg["labels"] or "main" not in pkg["labels"]
+            return "broken" in pkg["labels"]
     return False
-            
+
 
 def patched_repodata(channel, subdir, artifact):
     patches = repodata_patches(channel)[subdir]
