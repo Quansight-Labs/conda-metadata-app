@@ -270,8 +270,8 @@ def artifact_metadata(channel, subdir, artifact):
     )
 
 
-def is_archived_feedstock(feedstock):
-    owner, repo = feedstock.split("/")[-2:]
+def is_archived_repo(repo_url_or_owner_repo):
+    owner, repo = repo_url_or_owner_repo.split("/")[-2:]
     if owner != "conda-forge":
         return False
     r = requests.get(f"https://api.github.com/repos/{owner}/{repo}")
@@ -408,10 +408,10 @@ with st.sidebar:
         key="with_patches",
         help="Requires extra API calls. Slow! Only for conda-forge",
     )
-    mark_archived_feedstocks = st.checkbox(
+    show_archived = st.checkbox(
         "Highlight provenance if archived",
         value=False,
-        key="mark_archived_feedstocks",
+        key="show_archived",
         help="If the source feedstock is archived, the text will be struck through. "
         "Requires extra API calls. Slow! Only for conda-forge",
     )
@@ -422,13 +422,18 @@ with st.sidebar:
             # Use the user provided channel (via query params) if possible.
             index=CHANNELS.index(url_params["channel"]) if url_params["channel"] in CHANNELS else 0,
         )
+    _available_package_names = package_names(channel)
     package_name = st.selectbox(
         "Enter a package name:",
-        options=package_names(channel),
+        options=_available_package_names,
         key="package_name",
+        help=f"Choose one package out of the {len(_available_package_names) - 1:,} available ones. "
+        "Underscore-leading names are sorted last."
     )
     _available_subdirs = subdirs(package_name, channel, with_broken=with_broken)
-    _best_subdir, _best_version = _best_version_in_subdir(package_name, channel, with_broken=with_broken)
+    _best_subdir, _best_version = _best_version_in_subdir(
+        package_name, channel, with_broken=with_broken
+    )
     if _best_subdir and not getattr(st.session_state, "subdir", None):
         st.session_state.subdir = _best_subdir
     if _best_version and not getattr(st.session_state, "version", None):
@@ -465,7 +470,9 @@ with st.sidebar:
         options=_build_options,
         key="build",
     )
-    _extension_options = extensions(package_name, subdir, version, build, channel, with_broken=with_broken)
+    _extension_options = extensions(
+        package_name, subdir, version, build, channel, with_broken=with_broken
+    )
     if _extension_options and not getattr(st.session_state, "extension", None):
         st.session_state.extension = _extension_options[0]
     extension = st.selectbox(
@@ -566,19 +573,22 @@ if isinstance(data, dict):
                 parts = url.split("/")
                 commit = parts[-1]
                 name = parts[-3]
-                provenance.append(f"[{name} @ `{commit[:7]}`]({url})")
-                continue
-            name = url.split("/")[-1]
-            if mark_archived_feedstocks:
-                if is_archived_feedstock(url):
-                    name = f"~~{name}~~"
-            provenance.append(f"[{name}]({url})")
+                url_text = f"{name} @ `{commit[:7]}`"
+            else:
+                name = url_text = url.split("/")[-1]
+            if (
+                show_archived 
+                and channel == "conda-forge" 
+                and is_archived_repo(f"conda-forge/{name}")
+            ):
+                url_text = f"~~{url_text}~~"
+            provenance.append(f"[{url_text}]({url})")
         provenance = ", ".join(provenance)
     except Exception as exc:
         provenance = "N/A"
         logger.error(exc, exc_info=True)
 
-    if with_patches:
+    if with_patches and channel == "conda-forge":
         patched_data, yanked = patched_repodata(channel, subdir, artifact)
     else:
         patched_data = {}
