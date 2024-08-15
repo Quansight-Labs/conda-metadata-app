@@ -618,13 +618,16 @@ if isinstance(data, dict):
         else:
             maintainers.append(f"[{user}](https://github.com/{user})")
     maintainers = ", ".join(maintainers)
-    project_urls = " · ".join(
-        [
-            f"[{url}]({about.get(url)})"
-            for url in ("home", "dev_url", "doc_url")
-            if about.get(url)
-        ]
-    )
+    project_urls = []
+    for urltype in ("home", "dev_url", "doc_url"):
+        urls = about.get(urltype)
+        if urls is None:
+            continue
+        urls = [u.strip() for u in urls.split(",")]
+        for i, url in enumerate(urls, 1):
+            urlname = urltype if i == 1 else f"{urltype} {i}"
+            project_urls.append(f"[{urlname}]({url})")
+    project_urls = " · ".join(project_urls)
     st.write(
         cleandoc(
             f"""
