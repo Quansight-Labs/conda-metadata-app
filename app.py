@@ -2,11 +2,14 @@ import json
 import os
 import re
 from contextlib import closing
+from collections.abc import Iterable
 from datetime import datetime
 from difflib import unified_diff
 from inspect import cleandoc
 from io import StringIO
+from read_config import AppConfig, Channel, PackageDiscoveryChoice, ArchSubdirDiscoveryChoice, ArchSubdirList
 from tempfile import gettempdir
+import zstandard as zstd
 
 if not os.environ.get("CACHE_DIR"):
     from conda_oci_mirror import defaults
@@ -36,52 +39,99 @@ st.set_page_config(
     page_icon="📦",
     initial_sidebar_state="expanded",
 )
-ONE_DAY = 60 * 60 * 24
-TWO_HOURS = 60 * 60 * 4
-THIRTY_MINS = 60 * 30
-FIFTEEN_MINS = 60 * 15
 CHANNELS = ["conda-forge", "bioconda", "pkgs/main", "pkgs/r"]
-# pkgs/msys2 does not seem to offer .conda artifacts; leave out for now
-
 
 def bar_esc(s):
     "Escape vertical bars in tables"
     return s.replace("|", "\\|")
 
 
-@st.cache_resource(ttl=FIFTEEN_MINS, max_entries=5)
-def rssdata(channel="conda-forge"):
-    if channel.startswith("pkgs/"):
-        r = requests.get(f"https://repo.anaconda.com/{channel}/rss.xml")
-    else:
-        r = requests.get(f"https://conda.anaconda.org/{channel}/rss.xml")
+@st.cache_resource
+def app_config() -> AppConfig:
+    return AppConfig()
+
+
+def get_channel_config(channel_name: str) -> Channel:
+    try:
+        return app_config().channels[channel_name]
+    except KeyError:
+        raise ValueError(f"Channel `{channel_name}` not found in the configuration!")
+
+
+@st.cache_resource(ttl="15m", max_entries=5)
+def rss_data(channel_name: str) -> ET.ElementTree | None:
+    """
+    :returns None if the channel does not have an RSS feed
+    """
+    channel_config = get_channel_config(channel_name)
+    if not channel_config.rss_enabled:
+        return None
+    rss_url = channel_config.rss_url
+    r = requests.get(rss_url)
     r.raise_for_status()
     return ET.ElementTree(ET.fromstring(r.text))
 
 
-@st.cache_resource(ttl=FIFTEEN_MINS, max_entries=10)
-def channeldata(channel="conda-forge"):
-    if channel.startswith("pkgs/"):
-        r = requests.get(f"https://repo.anaconda.com/{channel}/channeldata.json")
-    else:
-        r = requests.get(f"https://conda.anaconda.org/{channel}/channeldata.json")
+@st.cache_resource(ttl="15m", max_entries=10)
+def channel_data(channel_name: str):
+    r = requests.get(get_channel_config(channel_name).channeldata_url)
     r.raise_for_status()
     return r.json()
 
 
-@st.cache_resource(ttl=FIFTEEN_MINS, max_entries=1000)
-def api_data(package_name, channel="conda-forge"):
-    if channel.startswith("pkgs/"):
-        channel = channel.split("/", 1)[1]
-    r = requests.get(f"https://api.anaconda.org/package/{channel}/{package_name}/files")
+def _download_compressed_repodata(compressed_url: str) -> dict | None:
+    """
+    Try to download the compressed repodata.json file.
+    If the file does not exist, return None.
+    Other HTTP errors are raised.
+    :returns the decompressed repodata.json, or None if the compressed file does not exist
+    """
+    with requests.get(compressed_url, stream=True) as r:
+        if r.status_code == 404:
+            return None
+        r.raise_for_status()
+
+        dctx = zstd.ZstdDecompressor()
+        with dctx.stream_reader(r.raw) as reader:
+            return json.load(reader)
+
+@st.cache_resource(ttl="15m", max_entries=50)
+def get_repodata(channel_name: str, arch_subdir: str) -> dict:
+    """
+    Fetch the repodata.json for a channel and subdir.
+    This function first tries to download the .zst-compressed version of the repodata, and if that does not exist,
+    it falls back to the uncompressed.
+    """
+    channel_config = get_channel_config(channel_name)
+
+    zstd_url = channel_config.get_zstd_repodata_url(arch_subdir)
+    decompressed_repodata = _download_compressed_repodata(zstd_url)
+
+    if decompressed_repodata is not None:
+        return decompressed_repodata
+
+    # fall back to the uncompressed version
+    repodata_url = channel_config.get_repodata_url(arch_subdir)
+    r = requests.get(repodata_url)
+    r.raise_for_status()
+
+    return r.json()
+
+
+@st.cache_resource(ttl="15m", max_entries=1000)
+def anaconda_api_data(package_name: str, channel_name: str):
+    if channel_name.startswith("pkgs/"):
+        channel_name = channel_name.split("/", 1)[1]
+    r = requests.get(f"https://api.anaconda.org/package/{channel_name}/{package_name}/files")
     r.raise_for_status()
     return r.json()
 
 
-@st.cache_resource(ttl=ONE_DAY, max_entries=10)
-def repodata_patches(channel="conda-forge"):
-    package_name = f"{channel}-repodata-patches"
-    data = api_data(package_name, channel)
+@st.cache_resource(ttl="1d", max_entries=10)
+def repodata_patches(channel_name: str):
+    package_name = f"{channel_name}-repodata-patches"
+    # TODO: replace anaconda_api_data to support other artifact discovery modes
+    data = anaconda_api_data(package_name, channel_name)
     most_recent = sorted(data, key=lambda x: x["attrs"]["timestamp"], reverse=True)[0]
     filename, conda = conda_reader_for_url(f"https:{most_recent['download_url']}")
 
@@ -93,7 +143,7 @@ def repodata_patches(channel="conda-forge"):
     return patches
 
 
-@st.cache_resource(ttl=ONE_DAY, max_entries=1000)
+@st.cache_resource(ttl="1d", max_entries=1000)
 def provenance_urls(package_name, channel="conda-forge", data=None):
     if not package_name or not data:
         return ""
@@ -120,40 +170,78 @@ def provenance_urls(package_name, channel="conda-forge", data=None):
     return ""
 
 
-def package_names(channel="conda-forge"):
-    names = [""]
-    for name in channeldata(channel)["packages"].keys():
-        if channel == "pkgs/r":
-            if name not in ("r", "rpy2", "rstudio") and not name.startswith(("r-", "_r-", "mro-")):
-                continue
-        elif channel == "pkgs/msys2" and not name.startswith(("m2-", "m2w64-", "msys2-")):
-            continue
-        names.append(name)
+def package_names(channel_name: str) -> Iterable[str]:
+    """
+    Get all package names of a channel.
+    For some reason, the return value of this function always includes an empty string.
+    """
+    all_packages: Iterable[str]
+    package_discovery_choice = get_channel_config(channel_name).package_discovery
+
+    if package_discovery_choice == PackageDiscoveryChoice.CHANNEL_DATA:
+        all_packages = channel_data(channel_name)["packages"].keys()
+    elif package_discovery_choice == PackageDiscoveryChoice.REPODATA:
+        all_subdirs = get_all_arch_subdirs(channel_name)
+        all_packages: set[str] = set()
+
+        for subdir in all_subdirs:
+            all_packages.update(pkg["name"] for pkg in get_repodata(channel_name, subdir)["packages"].values())
+    else:
+        raise RuntimeError("Invalid package discovery choice. This is an implementation error.")
+
+    names = get_channel_config(channel_name).package_filter.apply_filter(all_packages)
     return sorted(
         names,
         key=lambda x: f"zzzzzzz{x}" if x.startswith("_") else x,
     )
 
 
-def subdirs(package_name, channel="conda-forge", with_broken=False):
+def get_all_arch_subdirs(channel_name: str) -> list[str]:
+    """
+    Get all arch subdirs (e.g., noarch, osx-64, linux-64) of a channel.
+    The arch subdirs are sorted, ascending.
+    """
+    discovery_choice = get_channel_config(channel_name).arch_subdir_discovery
+
+    if discovery_choice == ArchSubdirDiscoveryChoice.CHANNELDATA:
+        return sorted(channel_data(channel_name)["subdirs"])
+
+    if isinstance(discovery_choice, ArchSubdirList):
+        return discovery_choice.subdirs
+
+    raise RuntimeError("Invalid arch subdir discovery choice. This is an implementation error.")
+
+
+
+def get_arch_subdirs_for_package(package_name: str, channel_name: str, with_broken: bool = False) -> list[str]:
     if not package_name:
         return []
-    return sorted(
-        [
-            subdir
-            for subdir in channeldata(channel)["packages"][package_name]["subdirs"]
-            if versions(package_name, subdir, channel, with_broken=with_broken)
-        ]
-    )
+    arch_subdir_discovery_choice = get_channel_config(channel_name).arch_subdir_discovery
+
+    if arch_subdir_discovery_choice == ArchSubdirDiscoveryChoice.CHANNELDATA:
+        return sorted(
+            [
+                subdir
+                for subdir in channel_data(channel_name)["packages"][package_name]["subdirs"]
+                if versions(package_name, subdir, channel_name, with_broken=with_broken)
+            ]
+        )
+
+    if isinstance(arch_subdir_discovery_choice, ArchSubdirList):
+        # TODO
+        pass
+
+    raise RuntimeError("Invalid arch subdir discovery choice. This is an implementation error.")
 
 
-def _best_version_in_subdir(package_name, channel="conda-forge", with_broken=False):
+
+def _best_version_in_subdir(package_name: str, channel_name: str, with_broken: bool = False):
     if not package_name:
         return None, None
     subdirs_plus_best_version = sorted(
         [
-            (subdir, versions(package_name, subdir, channel, with_broken=with_broken)[0])
-            for subdir in subdirs(package_name, channel, with_broken=with_broken)
+            (subdir, versions(package_name, subdir, channel_name, with_broken=with_broken)[0])
+            for subdir in get_arch_subdirs_for_package(package_name, channel_name, with_broken=with_broken)
         ],
         key=lambda x: VersionOrder(x[1]),
         reverse=True,
@@ -163,10 +251,10 @@ def _best_version_in_subdir(package_name, channel="conda-forge", with_broken=Fal
     return None, None
 
 
-def versions(package_name, subdir, channel="conda-forge", with_broken=False):
+def versions(package_name: str, subdir: str, channel: str, with_broken: bool = False):
     if not package_name or not subdir:
         return []
-    data = api_data(package_name, channel)
+    data = anaconda_api_data(package_name, channel)
     return sorted(
         {
             pkg["version"]: None
@@ -180,10 +268,10 @@ def versions(package_name, subdir, channel="conda-forge", with_broken=False):
     )
 
 
-def builds(package_name, subdir, version, channel="conda-forge", with_broken=False):
+def builds(package_name: str, subdir: str, version: str, channel: str, with_broken: bool = False):
     if not package_name or not subdir or not version:
         return []
-    data = api_data(package_name, channel)
+    data = anaconda_api_data(package_name, channel)
     build_str_to_num = {
         pkg["attrs"]["build"]: pkg["attrs"]["build_number"]
         for pkg in data
@@ -200,12 +288,12 @@ def builds(package_name, subdir, version, channel="conda-forge", with_broken=Fal
     ]
 
 
-def extensions(package_name, subdir, version, build, channel="conda-forge", with_broken=False):
+def extensions(package_name: str, subdir: str, version: str, build: str, channel: str, with_broken: bool = False):
     if not package_name or not subdir or not version or not build:
         return []
     if channel.startswith("pkgs/"):
         return ["conda"]
-    data = api_data(package_name, channel)
+    data = anaconda_api_data(package_name, channel)
     return sorted(
         {
             ("conda" if pkg["basename"].endswith(".conda") else "tar.bz2"): None
@@ -222,7 +310,7 @@ def extensions(package_name, subdir, version, build, channel="conda-forge", with
 def _is_broken(package_name, subdir, version, build, extension, channel="conda-forge"):
     if channel != "conda-forge":
         return False  #  we don't know
-    data = api_data(package_name, channel)
+    data = anaconda_api_data(package_name, channel)
     for pkg in data:
         if (
             pkg["attrs"]["subdir"] == subdir
@@ -234,7 +322,7 @@ def _is_broken(package_name, subdir, version, build, extension, channel="conda-f
     return False
 
 
-def patched_repodata(channel, subdir, artifact):
+def patched_repodata(channel: str, subdir: str, artifact: str) -> tuple[dict, bool]:
     patches = repodata_patches(channel)[subdir]
     key = "packages.conda" if artifact.endswith(".conda") else "packages"
     patched_data = patches[key].get(artifact, {})
@@ -298,17 +386,17 @@ def parse_url_params():
         with_broken = url_params.pop("with_broken") == "true"
     if "q" in url_params:
         query = url_params["q"]
-        if query in CHANNELS:  # channel only
+        if query in app_config().channels:  # channel only
             channel = query
         elif "/" in query:
             try:
                 components = query.split("/")
-                if len(components) == 2:  # cannot be pkgs/main because we checked above
+                if len(components) == 2:  # cannot be a channel name with a slash (e.g., pkgs/main)
                     channel, artifact = components
                     subdir = None
                 elif len(components) == 3:
                     channel, subdir, artifact = components
-                    if f"{channel}/{subdir}" in CHANNELS:
+                    if f"{channel}/{subdir}" in app_config().channels:
                         channel = f"{channel}/{subdir}"
                         subdir = None
                 elif len(components) == 4:
@@ -430,7 +518,7 @@ with st.sidebar:
         help=f"Choose one package out of the {len(_available_package_names) - 1:,} available ones. "
         "Underscore-leading names are sorted last."
     )
-    _available_subdirs = subdirs(package_name, channel, with_broken=with_broken)
+    _available_subdirs = get_arch_subdirs_for_package(package_name, channel, with_broken=with_broken)
     _best_subdir, _best_version = _best_version_in_subdir(
         package_name, channel, with_broken=with_broken
     )
@@ -691,17 +779,21 @@ if isinstance(data, dict):
     st.json(data, expanded=False)
 elif data == "show_latest":
     try:
-        data = rssdata(channel)
+        rss_ret = rss_data(channel)
     except Exception as exc:
         logger.error(exc, exc_info=True)
         st.error(f"Could not obtain RSS data for {channel}! `{exc.__class__.__name__}: {exc}`")
+        st.stop()
+
+    if not rss_ret:
+        st.info(f"No RSS feed available for {channel}.")
         st.stop()
 
     table = [
         "| **#** | **Package** | **Version** | **Platform(s)** | **Published** |",
         "| :---: | :---: | :---: | :---: | :---: |",
     ]
-    for n, item in enumerate(data.findall("channel/item"), 1):
+    for n, item in enumerate(rss_ret.findall("channel/item"), 1):
         title = item.find("title").text
         name, version, platforms = title.split(" ", 2)
         platforms = platforms[1:-1]
@@ -709,7 +801,7 @@ elif data == "show_latest":
         more_url = f"/?q={channel}/{name}"
         table.append(f"| {n} | [{name}]({more_url})| {version} | {platforms} | {published}")
     st.markdown(f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})")
-    st.markdown(f"> Last update: {data.find('channel/pubDate').text}.")
+    st.markdown(f"> Last update: {rss_ret.find('channel/pubDate').text}.")
     st.markdown("\n".join(table))
 elif isinstance(data, str) and data.startswith("error:"):
     st.error(data[6:])

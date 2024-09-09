@@ -1,0 +1,34 @@
+[channels.conda-forge]
+url = "https://conda.anaconda.org/conda-forge"
+rss_enabled = true
+package_discovery = "channeldata"
+artifact_discovery = "anaconda"
+repodata_patches_package = "conda-forge-repodata-patches"
+feedstock_outputs_mapper_base_url = "https://raw.githubusercontent.com/conda-forge/feedstock-outputs/main"
+provenance_url_pattern = "https://github.com/conda-forge/{}-feedstock"
+
+[channels.bioconda]
+url = "https://conda.anaconda.org/bioconda"
+rss_enabled = true
+package_discovery = "channeldata"
+artifact_discovery = "anaconda"
+provenance_url_pattern = "https://github.com/bioconda/bioconda-recipes/tree/master/recipes/{}"
+
+[channels."pkgs/main"]
+url = "https://repo.anaconda.com/pkgs/main"
+rss_enabled = true
+package_discovery = "channeldata"
+artifact_discovery = "anaconda"
+provenance_url_pattern = "https://github.com/AnacondaRecipes/{}-feedstock"
+
+[channels."pkgs/r"]
+url = "https://repo.anaconda.com/pkgs/r"
+rss_enabled = true
+package_discovery = "channeldata"
+artifact_discovery = "anaconda"
+provenance_url_pattern = "https://github.com/AnacondaRecipes/{}-feedstock"
+package_filter = { allowed_names = ["r", "rpy2", "rstudio"], allowed_prefixes = ["r-", "_r-", "mro-"] }
+
+# pkgs/msys2 does not seem to offer .conda artifacts; leave out for now
+# [channels."pkgs/msys2"]
+# package_filter = { allowed_prefixes = ["m2-", "m2w64-", "msys2-"] }
