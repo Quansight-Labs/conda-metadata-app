@@ -1,7 +1,8 @@
 from enum import StrEnum
 from collections.abc import Iterable
+from typing import Self
 
-from pydantic import AnyHttpUrl, BaseModel, field_validator, TypeAdapter, ValidationError
+from pydantic import AnyHttpUrl, BaseModel, field_validator, TypeAdapter, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, TomlConfigSettingsSource
 
 
@@ -32,7 +33,7 @@ class ArchSubdirDiscoveryChoice(StrEnum):
     CHANNELDATA = "channeldata"
 
 
-class ArchSubdirList(StrEnum):
+class ArchSubdirList(BaseModel):
     subdirs: list[str]
 
 
@@ -76,21 +77,21 @@ class Channel(BaseModel):
     For conda-forge, this should be `conda-forge-repodata-patches`.
     The package is expected to be available in the channel.
     """
-    feedstock_outputs_mapper_base_url: AnyHttpUrl | None = None
+    map_conda_forge_package_to_feedstock: bool = False
     """
-    A base URL to map packages to feedstock names. Feedstock names do not include suffixes like `-feedstock`.
-    If None, it is assumed that the feedstock name is the same as the package name.
+    Enable this for conda-forge to map package names to feedstock names.
+    This is used for provenance URLs (see below).
     
-    For conda-forge, this should be https://raw.githubusercontent.com/conda-forge/feedstock-outputs/main.
-    Other channels must adhere to the conda-forge feedstock-outputs repository structure.
+    If this is False, the package name is used as the feedstock name.
     """
     provenance_url_pattern: str | None = None
     """
-    A URL pattern to link to the provenance of a package. The URL pattern should contain a `{}` placeholder
-    for the feedstock (!) name (see feedstock_outputs_mapper_base_url).
+    A URL pattern to link to the provenance of a package. The URL pattern should contain a `{feedstock}` placeholder
+    for the feedstock (!) name (see map_conda_forge_package_to_feedstock).
     Each placeholder will be replaced with the feedstock name.
     
-    For conda-forge, this should be https://github.com/conda-forge/{}-feedstock.
+    For conda-forge, this should be https://github.com/conda-forge/{feedstock}-feedstock.
+    A remote URL present in the metadata always takes precedence over this URL pattern.
     """
 
     # noinspection PyNestedDecorators
@@ -100,7 +101,7 @@ class Channel(BaseModel):
         if provenance_url_pattern is None:
             return None
 
-        replaced_url = provenance_url_pattern.replace("{}", "test")
+        replaced_url = provenance_url_pattern.format(feedstock="test")
 
         # assert that replaced_url is a valid URL
         try:
@@ -111,6 +112,22 @@ class Channel(BaseModel):
         return provenance_url_pattern
 
     package_filter: PackageFilter = PackageFilter()
+    supports_broken_label: bool = False
+    """
+    Set this to true if the channel supports a label called "broken" indicating yanked releases.
+    Currently, this is only respected if artifact_discovery is set to "anaconda".
+    """
+
+    @model_validator(mode="after")
+    def check_supports_broken_label_artifact_discovery(self) -> Self:
+        if self.supports_broken_label and self.artifact_discovery != ArtifactDiscoveryChoice.ANACONDA_API:
+            raise ValueError("supports_broken_label is only supported for Anaconda API artifact discovery.")
+        return self
+
+    dashboards: list[str] = []
+    """
+    Must match keys in the AppConfig.dashboards dictionary.
+    """
 
 
     @property
@@ -127,6 +144,41 @@ class Channel(BaseModel):
     def get_zstd_repodata_url(self, arch_subdir: str) -> str:
         return self.get_repodata_url(arch_subdir) + ".zst"
 
+    def get_artifact_download_url(self, arch_subdir: str, package_name: str, version: str, build_string: str, extension: str) -> str:
+        return f"{self.url}/{arch_subdir}/{package_name}-{version}-{build_string}.{extension}"
+
+
+class Dashboard(BaseModel):
+    url_pattern: str
+    """
+    The URL pattern of the dashboard. The URL pattern can contain the following placeholders within curly {} braces:
+    
+    - `channel`: The channel name. If the channel name contains a slash, only the second part is used.
+    - `name`: The name of the package.
+    - `version`: The version of the package.
+    - `subdir`: The architecture subdirectory.
+    """
+
+    # noinspection PyNestedDecorators
+    @field_validator("url_pattern")
+    @classmethod
+    def _validate_url_pattern(cls, url_pattern: str) -> str:
+        replaced_url = url_pattern.format(
+            channel="test-channel",
+            name="test-name",
+            version="1.2.3",
+            subdir="noarch",
+        )
+
+        # assert that replaced_url is a valid URL
+        try:
+            TypeAdapter(AnyHttpUrl).validate_python(replaced_url)
+        except ValidationError:
+            raise ValueError("url_pattern must be a valid URL pattern with placeholders.")
+
+        return url_pattern
+
+
 
 class AppConfig(BaseSettings):
     channels: dict[str, Channel]
@@ -141,6 +193,17 @@ class AppConfig(BaseSettings):
         if any(channel_name.count("/") > 1 for channel_name in channels):
             raise ValueError("Channel names must not contain more than one slash.")
         return channels
+
+    dashboards: dict[str, Dashboard] = {}
+    enable_filepath_search: bool = True
+
+    @model_validator(mode="after")
+    def _validate_dashboards(self) -> Self:
+        for channel in self.channels.values():
+            for dashboard_name in channel.dashboards:
+                if dashboard_name not in self.dashboards:
+                    raise ValueError(f"Dashboard {dashboard_name} is not defined.")
+        return self
 
     model_config = SettingsConfigDict(toml_file="app_config.toml")
 
