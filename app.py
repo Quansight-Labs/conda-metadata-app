@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import typing
 from collections.abc import Iterable
 from contextlib import closing
 from datetime import datetime
@@ -10,6 +11,7 @@ from io import StringIO
 from tempfile import gettempdir
 
 import zstandard as zstd
+from rattler.platform import PlatformLiteral
 from requests.auth import HTTPBasicAuth
 
 from app_config import AppConfig, Channel, PackageDiscoveryChoice, ArchSubdirDiscoveryChoice, ArchSubdirList, \
@@ -239,6 +241,26 @@ def get_package_names(channel_name: str) -> list[str]:
     )
 
 
+@st.cache_resource(ttl="12h", max_entries=1000)
+def _discover_arch_subdirs_exhaustively(channel_name: str) -> list[str]:
+    """
+    Call this function for ArchSubdirDiscoveryChoice.ALL.
+    It uses rattler's list of possible platforms, and tries to find repodata.json for each of them.
+    :returns the list of all arch subdirs for which repodata.json was found
+    """
+    all_subdirs = []
+    for platform in typing.get_args(PlatformLiteral):
+        repodata_url = get_channel_config(channel_name).get_repodata_url(platform)
+        # make a HEAD request to check if the repodata exists
+        r = _make_http_session(channel_name).head(repodata_url)
+        if r.status_code == 404:
+            continue
+        r.raise_for_status()
+        all_subdirs.append(platform)
+    return all_subdirs
+
+
+
 def get_all_arch_subdirs(channel_name: str) -> list[str]:
     """
     Get all arch subdirs (e.g., noarch, osx-64, linux-64) of a channel.
@@ -248,6 +270,9 @@ def get_all_arch_subdirs(channel_name: str) -> list[str]:
 
     if discovery_choice == ArchSubdirDiscoveryChoice.CHANNELDATA:
         return sorted(get_channeldata(channel_name)["subdirs"])
+
+    if discovery_choice == ArchSubdirDiscoveryChoice.ALL:
+        return sorted(_discover_arch_subdirs_exhaustively(channel_name))
 
     if isinstance(discovery_choice, ArchSubdirList):
         return discovery_choice.subdirs
@@ -270,8 +295,9 @@ def get_arch_subdirs_for_package(package_name: str, channel_name: str, with_brok
 
     if arch_subdir_discovery_choice == ArchSubdirDiscoveryChoice.CHANNELDATA:
         all_subdirs = get_channeldata(channel_name)["packages"][package_name]["subdirs"]
-    elif isinstance(arch_subdir_discovery_choice, ArchSubdirList):
-        all_subdirs = arch_subdir_discovery_choice.subdirs
+    elif arch_subdir_discovery_choice == ArchSubdirDiscoveryChoice.ALL or \
+            isinstance(arch_subdir_discovery_choice, ArchSubdirList):
+        all_subdirs = get_all_arch_subdirs(channel_name)
     else:
         raise RuntimeError("Invalid arch subdir discovery choice. This is an implementation error.")
 

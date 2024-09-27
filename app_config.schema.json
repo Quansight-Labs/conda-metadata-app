@@ -1,8 +1,8 @@
 {
   "$defs": {
     "ArchSubdirDiscoveryChoice": {
-      "const": "channeldata",
       "enum": [
+        "all",
         "channeldata"
       ],
       "title": "ArchSubdirDiscoveryChoice",

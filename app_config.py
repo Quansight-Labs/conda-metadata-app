@@ -33,7 +33,15 @@ class ArtifactDiscoveryChoice(StrEnum):
 
 
 class ArchSubdirDiscoveryChoice(StrEnum):
+    ALL = "all"
+    """
+    Try to find repodata.json for a well-known list of architecture subdirectories imported from rattler,
+    and use those subdirs for which repodata.json is found.
+    """
     CHANNELDATA = "channeldata"
+    """
+    Find all architecture subdirectories in channeldata.json.
+    """
 
 
 class ArchSubdirList(BaseModel):

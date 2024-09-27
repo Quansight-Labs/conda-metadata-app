@@ -2,3 +2,4 @@ conda-forge-metadata==0.10.0
 git+https://github.com/channel-mirrors/conda-oci-mirror.git@v0.1.0
 streamlit==1.38.0
 streamlit-searchbox==0.1.14
+py-rattler==0.7.0

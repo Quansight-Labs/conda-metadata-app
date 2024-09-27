@@ -19,6 +19,7 @@ pydantic-settings = ">=2.4.0,<3"
 pydantic = ">=2.8.2,<3"
 typing-extensions = ">=4.12.2,<5"
 zstandard = ">=0.23.0,<0.24"
+py-rattler = ">=0.7.0,<0.8"
 
 [pypi-dependencies]
 conda-forge-metadata = ">=0.10.0,<0.11"
