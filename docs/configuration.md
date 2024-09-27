@@ -130,6 +130,7 @@ dashboards = ["anaconda", "ghcr"]
 #### Authentication
 
 `auth_username`, `auth_password`, `auth_quetz_token`, `auth_bearer_token`: Use these to configure authentication for the channel.
+
 ```toml
 # HTTP Basic Authentication (for Artifactory)
 auth_username = "username"
@@ -140,6 +141,12 @@ auth_quetz_token = "token"
 # or
 # Bearer Token Authentication (for prefix.dev)
 auth_bearer_token = "pfx_token"
+```
+
+You can also configure those values to read from an environment variable or a secrets file. For example:
+```toml
+auth_username = { env = "ARTIFACTORY_USERNAME" }    # read from environment variable
+auth_password = { file = "/var/secrets/artifactory_password" }  # read password from file
 ```
 
 #### Metadata Retrieval
