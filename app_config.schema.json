@@ -51,19 +51,11 @@
           "type": "boolean"
         },
         "package_discovery": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/PackageDiscoveryChoice"
-            }
-          ],
+          "$ref": "#/$defs/PackageDiscoveryChoice",
           "description": "How to discover names of packages in the channel."
         },
         "artifact_discovery": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/ArtifactDiscoveryChoice"
-            }
-          ],
+          "$ref": "#/$defs/ArtifactDiscoveryChoice",
           "description": "How to discover artifacts in the channel, given a package name."
         },
         "arch_subdir_discovery": {
@@ -112,11 +104,7 @@
           "title": "Provenance Url Pattern"
         },
         "package_filter": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/PackageFilter"
-            }
-          ],
+          "$ref": "#/$defs/PackageFilter",
           "default": {
             "allowed_names": [],
             "allowed_prefixes": []
@@ -139,11 +127,7 @@
           "type": "array"
         },
         "metadata_retrieval": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/MetadataRetrieval"
-            }
-          ],
+          "$ref": "#/$defs/MetadataRetrieval",
           "description": "How to retrieve metadata for a package."
         },
         "auth_profile": {
