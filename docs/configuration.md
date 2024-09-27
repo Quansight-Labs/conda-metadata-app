@@ -40,11 +40,13 @@ The above example shows a channel with `pkgs/main` as its custom name.
 ```toml
 url = "https://conda.anaconda.org/conda-forge"
 ```
+---
 
 `rss_enabled`: If set to `true`, it enables RSS feed for this channel.
 ```toml
 rss_enabled = true
 ```
+---
 
 `package_discovery`: This determines the method for discovering package names in the channel. Accepts two options:
 - `channeldata`: Discover packages using channeldata.json
@@ -53,6 +55,7 @@ rss_enabled = true
 ```toml
 package_discovery = "channeldata"
 ```
+---
 
 `artifact_discovery`: Determines the method for discovering package artifacts in the channel. Accepts two options:
 - `anaconda`: Discover artifacts using the Anaconda API. This only works if the package is hosted on Anaconda and the channel is public.
@@ -60,6 +63,7 @@ package_discovery = "channeldata"
 ```toml
 artifact_discovery = "anaconda"
 ```
+---
 
 `arch_subdir_discovery`: Determines how to discover all available architectures. Possible choices are:
 - `all`: Try all well-known architectures.
@@ -70,11 +74,13 @@ arch_subdir_discovery = "all"
 # or
 arch_subdir_discovery = { subdirs = ["linux-64", "osx-64", "win-64"] }
 ```
+---
   
 `repodata_patches_package`: Specifies a package that includes patches for "repodata". It is expected to be available in the channel.
 ```toml
 repodata_patches_package = "conda-forge-repodata-patches"
 ```
+---
 
 `map_conda_forge_package_to_feedstock`: This is a flag used for enabling package name to feedstock name mapping for the `conda-forge` channel.
 If false, the package name is used as the feedstock name. If true, conda-forge's [feedstock-outputs](https://github.com/conda-forge/feedstock-outputs)
@@ -82,33 +88,39 @@ is used to map the package name to the feedstock name.
 ```toml
 map_conda_forge_package_to_feedstock = true
 ```
+---
 
 `provenance_url_pattern`: This provides a URL pattern to link to the source of a package. The `{feedstock}` placeholder is replaced with the feedstock name.
 ```toml
 provenance_url_pattern = "https://github.com/conda-forge/{feedstock}-feedstock"
 ```
+---
 
 `package_filter`: This property provides mechanism to filter packages by name or prefix.
 ```toml
 # allows packages with names "r", "rpy2", "rstudio" and prefixes "r-", "_r-", "mro-"
 package_filter = { allowed_names = ["r", "rpy2", "rstudio"], allowed_prefixes = ["r-", "_r-", "mro-"] }
 ```
+---
 
 `supports_broken_label`: This flag indicates that the channel supports a label called "broken" for releases that are not working (yanked).
 ```toml
 supports_broken_label = true
 ```
+---
 
 `dashboards`: List of dashboards that should be linked from the package browser. Dashboards are defined in the global `dashboards` section (see below).
 ```toml
 dashboards = ["anaconda", "ghcr"]
 ```
+---
 
 `auth_profile` The name of the authentication profile to use for this channel.
 TODO: remove this because the auth config is revised.
 ```toml
 auth_profile = "my_auth_profile"
 ```
+---
 
 `metadata_retrieval`: This key indicates how metadata for a package will be retrieved. It supports two options:
 - `streamed`: Currently only supports .conda packages.
@@ -116,6 +128,7 @@ auth_profile = "my_auth_profile"
 ```toml
 metadata_retrieval = "streamed"
 ```
+---
 
 `override_extensions`: This is used to define extensions of conda package that override auto detection.
 Possible choices are `[".conda", ".tar.bz2"]`.
