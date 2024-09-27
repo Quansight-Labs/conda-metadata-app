@@ -212,10 +212,9 @@ def provenance_urls(package_name: str, channel: str, data: dict | None = None):
     ]
 
 
-def get_package_names(channel_name: str) -> Iterable[str]:
+def get_package_names(channel_name: str) -> list[str]:
     """
     Get all package names of a channel.
-    For some reason, the return value of this function always includes an empty string.
     """
     all_packages: Iterable[str]
     package_discovery_choice = get_channel_config(channel_name).package_discovery
@@ -670,7 +669,7 @@ with st.sidebar:
             "The inclusion of broken artifacts option is ignored for channels that use repodata for artifact discovery."
         )
 
-    _available_package_names = get_package_names(channel)
+    _available_package_names = [""] + get_package_names(channel)    # empty string means: show RSS feed
     package_name = st.selectbox(
         "Enter a package name:",
         options=_available_package_names,
