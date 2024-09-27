@@ -149,3 +149,8 @@ prefix = { url_pattern = "https://prefix.dev/channels/{channel}/packages/{name}"
 The `url_pattern` can contain placeholders that are encompassed in curly braces `{}`. These placeholders get replaced with the relevant value when generating the URLs. Current available placeholders include `{channel}`, `{name}`, `{version}`, and `{subdir}`. 
 
 Note that the `app_config.toml` file is loaded by the application at runtime. Therefore, any changes made while the app is running will take effect only after you restart the application. Ensure to follow the correct syntax to avoid runtime errors.
+
+## Complete Schema
+Refer to [app_config.py](../app_config.py) for the complete configuration schema.
+
+You can configure your IDE to use the [app_config.schema.json](../app_config.schema.json) file for auto-completion and validation of the `app_config.toml` file.
