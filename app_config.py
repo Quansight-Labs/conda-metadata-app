@@ -1,12 +1,16 @@
+import functools
 import json
+import os
 from enum import StrEnum
 from collections.abc import Iterable
-from typing import Self, Literal
+from typing import Self, Literal, Any
 
 from pydantic import AnyHttpUrl, BaseModel, field_validator, TypeAdapter, ValidationError, model_validator, ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, TomlConfigSettingsSource
 
-from auth_config import AuthConfig
+class HashableBaseModel(BaseModel):
+    def __hash__(self):
+        return hash((type(self),) + tuple(self.__dict__.values()))
 
 
 class PackageDiscoveryChoice(StrEnum):
@@ -94,6 +98,50 @@ class MetadataRetrieval(StrEnum):
     Note that the OCI registry is currently only supported for public channels, and uses the name (!) of
     the channel you have configured.
     """
+
+
+class EnvSecret(HashableBaseModel):
+    env: str
+    """
+    Read the secret from the environment variable with this name.
+    """
+
+    @functools.cache
+    def get_value(self) -> str:
+        return os.environ[self.env]
+
+    @model_validator(mode="after")
+    def _check_env_exists(self) -> Self:
+        try:
+            # also populate the cache
+            self.get_value()
+        except KeyError:
+            raise ValueError(f"Secret environment variable {self.env} does not exist.")
+        return self
+
+
+class FileSecret(HashableBaseModel):
+    file: str
+    """
+    Read the secret from the file with this name.
+    """
+
+    @functools.cache
+    def get_value(self) -> str:
+        with open(self.file) as f:
+            return f.read().strip()
+
+    @model_validator(mode="after")
+    def _check_file_exists(self) -> Self:
+        try:
+            # also populate the cache
+            self.get_value()
+        except FileNotFoundError:
+            raise ValueError(f"Secret file {self.file} does not exist.")
+        return self
+
+
+Secret = EnvSecret | FileSecret
 
 
 class Channel(BaseModel):
@@ -184,31 +232,53 @@ class Channel(BaseModel):
     """
     How to retrieve metadata for a package.
     """
-    auth_profile: str | None = None
-    """
-    Set this to the name of a configured authentication profile in the AuthConfig (read from the environment).
-    
-    For example, in order to configure a private channel, set this to `profileXY`.
-    Then, set the following env variables:
-    - `auth_profileXY_username`
-    - `auth_profileXY_password`
-    """
-
-    # noinspection PyNestedDecorators
-    @field_validator("auth_profile")
-    @classmethod
-    def _check_auth_profile_exists(cls, auth_profile: str | None) -> str | None:
-        if auth_profile is None:
-            return None
-        auth_config = AuthConfig()
-        if auth_profile not in auth_config.profiles:
-            raise ValueError(f"Auth profile {auth_profile} is not defined.")
-        return auth_profile
 
     override_extensions: list[Literal[".conda"] | Literal[".tar.bz2"]] | None = None
     """
     Set this to a list of conda package extensions to override the auto detection of extensions.
     """
+
+    auth_username: str | Secret | None = None
+    """
+    The username for HTTP basic authentication.
+    """
+
+    auth_password: str | Secret | None = None
+    """
+    The password for HTTP basic authentication.
+    """
+
+    auth_quetz_token: str | Secret | None = None
+    """
+    The Quetz token for authentication. Adds an X-API-Key header to requests.
+    """
+
+    auth_bearer_token: str | Secret | None = None
+    """
+    The bearer token for authentication. Adds an Authorization: Bearer header to requests.
+    Use this for private prefix.dev channels.
+    """
+
+    @model_validator(mode="after")
+    def _check_single_or_no_auth(self) -> Self:
+        basic_auth_fields_set = [
+            self.auth_username is not None,
+            self.auth_password is not None,
+        ]
+        if 0 < sum(basic_auth_fields_set) < 2:
+            raise ValueError("auth_username and auth_password must be set together.")
+
+        basic_auth_set = any(basic_auth_fields_set)
+        auth_fields_set = [
+            basic_auth_set,
+            self.auth_quetz_token is not None,
+            self.auth_bearer_token is not None,
+        ]
+
+        if sum(auth_fields_set) > 1:
+            raise ValueError("Only one authentication method can be set at a time.")
+
+        return self
 
 
     @property

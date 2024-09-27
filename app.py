@@ -15,8 +15,7 @@ from rattler.platform import PlatformLiteral
 from requests.auth import HTTPBasicAuth
 
 from app_config import AppConfig, Channel, PackageDiscoveryChoice, ArchSubdirDiscoveryChoice, ArchSubdirList, \
-    ArtifactDiscoveryChoice, MetadataRetrieval
-from auth_config import AuthConfig
+    ArtifactDiscoveryChoice, MetadataRetrieval, Secret
 
 if not os.environ.get("CACHE_DIR"):
     from conda_oci_mirror import defaults
@@ -58,26 +57,40 @@ def app_config() -> AppConfig:
     return AppConfig()
 
 
-@st.cache_resource()
-def get_auth_config() -> AuthConfig:
-    return AuthConfig()
-
-
 def get_channel_config(channel_name: str) -> Channel:
     try:
         return app_config().channels[channel_name]
     except KeyError:
         raise ValueError(f"Channel `{channel_name}` not found in the configuration!")
 
+
+def _unwrap_secret(secret: str | Secret) -> str:
+    if isinstance(secret, str):
+        return secret
+    return secret.get_value()
+
+
 def _make_http_session(channel_name: str) -> requests.Session:
-    channel_config = get_channel_config(channel_name)
     session = requests.Session()
     session.headers["User-Agent"] = "conda-metadata-browser/0.1.0"
-    if channel_config.auth_profile:
-        auth_config = get_auth_config()
-        profile = auth_config.profiles[channel_config.auth_profile]
-        session.auth = HTTPBasicAuth(profile.username, profile.password)
+    channel_config = get_channel_config(channel_name)
+    if channel_config.auth_username is not None:
+        # use HTTP basic auth
+        username = _unwrap_secret(channel_config.auth_username)
+        password = _unwrap_secret(channel_config.auth_password)
+        session.auth = HTTPBasicAuth(username, password)
+        return session
+    if quetz_token := channel_config.auth_quetz_token:
+        # use Quetz token auth
+        session.headers["X-API-Key"] = _unwrap_secret(quetz_token)
+        return session
+    if bearer_token := channel_config.auth_bearer_token:
+        # use bearer token auth
+        session.headers["Authorization"] = f"Bearer {_unwrap_secret(bearer_token)}"
+        return session
+    # no auth
     return session
+
 
 
 @st.cache_resource(ttl="15m", max_entries=5)
@@ -252,7 +265,7 @@ def _discover_arch_subdirs_exhaustively(channel_name: str) -> list[str]:
     for platform in typing.get_args(PlatformLiteral):
         repodata_url = get_channel_config(channel_name).get_repodata_url(platform)
         # make a HEAD request to check if the repodata exists
-        r = _make_http_session(channel_name).head(repodata_url)
+        r = _make_http_session(channel_name).head(repodata_url, allow_redirects=True)
         if r.status_code == 404:
             continue
         r.raise_for_status()
@@ -896,7 +909,7 @@ if isinstance(data, dict):
     dashboard_markdown_links = [
         f"[{name}]({url})" for name, url in dashboard_urls.items()
     ]
-    dashboard_markdown_links = " · ".join(dashboard_markdown_links)
+    dashboard_markdown_links = " · ".join(dashboard_markdown_links) if dashboard_markdown_links else "-"
     build_str = data.get("index", {}).get("build", "*N/A*")
     if build_str == "*N/A*":
         download = "*N/A*"
@@ -933,7 +946,6 @@ if isinstance(data, dict):
             urlname = urltype if i == 1 else f"{urltype} {i}"
             project_urls.append(f"[{urlname}]({url})")
     project_urls = " · ".join(project_urls)
-    print(f"Provenance: {provenance}")
     st.write(
         cleandoc(
             f"""

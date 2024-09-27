@@ -130,19 +130,6 @@
           "$ref": "#/$defs/MetadataRetrieval",
           "description": "How to retrieve metadata for a package."
         },
-        "auth_profile": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Set this to the name of a configured authentication profile in the AuthConfig (read from the environment).\n\nFor example, in order to configure a private channel, set this to `profileXY`.\nThen, set the following env variables:\n- `auth_profileXY_username`\n- `auth_profileXY_password`",
-          "title": "Auth Profile"
-        },
         "override_extensions": {
           "anyOf": [
             {
@@ -173,6 +160,82 @@
           "default": null,
           "description": "Set this to a list of conda package extensions to override the auto detection of extensions.",
           "title": "Override Extensions"
+        },
+        "auth_username": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EnvSecret"
+            },
+            {
+              "$ref": "#/$defs/FileSecret"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The username for HTTP basic authentication.",
+          "title": "Auth Username"
+        },
+        "auth_password": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EnvSecret"
+            },
+            {
+              "$ref": "#/$defs/FileSecret"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The password for HTTP basic authentication.",
+          "title": "Auth Password"
+        },
+        "auth_quetz_token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EnvSecret"
+            },
+            {
+              "$ref": "#/$defs/FileSecret"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The Quetz token for authentication. Adds an X-API-Key header to requests.",
+          "title": "Auth Quetz Token"
+        },
+        "auth_bearer_token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EnvSecret"
+            },
+            {
+              "$ref": "#/$defs/FileSecret"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The bearer token for authentication. Adds an Authorization: Bearer header to requests.\nUse this for private prefix.dev channels.",
+          "title": "Auth Bearer Token"
         }
       },
       "required": [
@@ -197,6 +260,32 @@
         "url_pattern"
       ],
       "title": "Dashboard",
+      "type": "object"
+    },
+    "EnvSecret": {
+      "properties": {
+        "env": {
+          "title": "Env",
+          "type": "string"
+        }
+      },
+      "required": [
+        "env"
+      ],
+      "title": "EnvSecret",
+      "type": "object"
+    },
+    "FileSecret": {
+      "properties": {
+        "file": {
+          "title": "File",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "title": "FileSecret",
       "type": "object"
     },
     "MetadataRetrieval": {
