@@ -55,7 +55,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ee/fb/14d30eb4956408ee3ae09ad34299131fb383c47df355ddb428a7331cfa1e/charset_normalizer-3.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/00/2e/d53fa4befbf2cfa713304affc7ca780ce4fc1fd8710527771b58311a3229/click-8.1.7-py3-none-any.whl
       - pypi: git+https://github.com/channel-mirrors/conda-oci-mirror.git@25ea3e436f0b0bc5a9c646121efafc9c68e116cd
-      - pypi: https://files.pythonhosted.org/packages/3e/ba/2c66f3babf0da4759ff16f175b58cba68091fcbeb8c4f23d620b84ee6d8f/conda_forge_metadata-0.8.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a6/51/d66247a7e03aef65909d65abe19207dd1b0d47bf4ee43a198bf21c34b99d/conda_forge_metadata-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/fd/51b3bcfeedbf2fc93a7ce1a1f79865dc80617058089a3c2bdb010ebc60db/conda_package_handling-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/85/eb/283c643915a4a76f88d4d2f345b5e81a2fb1a5ad18615b24fa019ce480c4/conda_package_streaming-0.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/20/8d/778b7d51b981a96554f29136cd59ca7880bf58094338085bcf2a979a0e6a/Deprecated-1.2.14-py2.py3-none-any.whl
@@ -137,7 +137,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/2e/7d/2259318c202f3d17f3fe6438149b3b9e706d1070fe3fcbb28049730bb25c/charset_normalizer-3.3.2-cp312-cp312-macosx_10_9_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/00/2e/d53fa4befbf2cfa713304affc7ca780ce4fc1fd8710527771b58311a3229/click-8.1.7-py3-none-any.whl
       - pypi: git+https://github.com/channel-mirrors/conda-oci-mirror.git@25ea3e436f0b0bc5a9c646121efafc9c68e116cd
-      - pypi: https://files.pythonhosted.org/packages/3e/ba/2c66f3babf0da4759ff16f175b58cba68091fcbeb8c4f23d620b84ee6d8f/conda_forge_metadata-0.8.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a6/51/d66247a7e03aef65909d65abe19207dd1b0d47bf4ee43a198bf21c34b99d/conda_forge_metadata-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/fd/51b3bcfeedbf2fc93a7ce1a1f79865dc80617058089a3c2bdb010ebc60db/conda_package_handling-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/85/eb/283c643915a4a76f88d4d2f345b5e81a2fb1a5ad18615b24fa019ce480c4/conda_package_streaming-0.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/20/8d/778b7d51b981a96554f29136cd59ca7880bf58094338085bcf2a979a0e6a/Deprecated-1.2.14-py2.py3-none-any.whl
@@ -218,7 +218,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/3a/52/9f9d17c3b54dc238de384c4cb5a2ef0e27985b42a0e5cc8e8a31d918d48d/charset_normalizer-3.3.2-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/00/2e/d53fa4befbf2cfa713304affc7ca780ce4fc1fd8710527771b58311a3229/click-8.1.7-py3-none-any.whl
       - pypi: git+https://github.com/channel-mirrors/conda-oci-mirror.git@25ea3e436f0b0bc5a9c646121efafc9c68e116cd
-      - pypi: https://files.pythonhosted.org/packages/3e/ba/2c66f3babf0da4759ff16f175b58cba68091fcbeb8c4f23d620b84ee6d8f/conda_forge_metadata-0.8.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a6/51/d66247a7e03aef65909d65abe19207dd1b0d47bf4ee43a198bf21c34b99d/conda_forge_metadata-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/fd/51b3bcfeedbf2fc93a7ce1a1f79865dc80617058089a3c2bdb010ebc60db/conda_package_handling-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/85/eb/283c643915a4a76f88d4d2f345b5e81a2fb1a5ad18615b24fa019ce480c4/conda_package_streaming-0.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/20/8d/778b7d51b981a96554f29136cd59ca7880bf58094338085bcf2a979a0e6a/Deprecated-1.2.14-py2.py3-none-any.whl
@@ -302,7 +302,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/00/2e/d53fa4befbf2cfa713304affc7ca780ce4fc1fd8710527771b58311a3229/click-8.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl
       - pypi: git+https://github.com/channel-mirrors/conda-oci-mirror.git@25ea3e436f0b0bc5a9c646121efafc9c68e116cd
-      - pypi: https://files.pythonhosted.org/packages/3e/ba/2c66f3babf0da4759ff16f175b58cba68091fcbeb8c4f23d620b84ee6d8f/conda_forge_metadata-0.8.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a6/51/d66247a7e03aef65909d65abe19207dd1b0d47bf4ee43a198bf21c34b99d/conda_forge_metadata-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/fd/51b3bcfeedbf2fc93a7ce1a1f79865dc80617058089a3c2bdb010ebc60db/conda_package_handling-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/85/eb/283c643915a4a76f88d4d2f345b5e81a2fb1a5ad18615b24fa019ce480c4/conda_package_streaming-0.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/20/8d/778b7d51b981a96554f29136cd59ca7880bf58094338085bcf2a979a0e6a/Deprecated-1.2.14-py2.py3-none-any.whl
@@ -735,9 +735,9 @@ packages:
   requires_python: '!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7'
 - kind: pypi
   name: conda-forge-metadata
-  version: 0.8.1
-  url: https://files.pythonhosted.org/packages/3e/ba/2c66f3babf0da4759ff16f175b58cba68091fcbeb8c4f23d620b84ee6d8f/conda_forge_metadata-0.8.1-py3-none-any.whl
-  sha256: 77a48efe40fe07b38ef3bd5e66db8a4190fed0d547f3c101b487f631bea883c3
+  version: 0.10.0
+  url: https://files.pythonhosted.org/packages/a6/51/d66247a7e03aef65909d65abe19207dd1b0d47bf4ee43a198bf21c34b99d/conda_forge_metadata-0.10.0-py3-none-any.whl
+  sha256: 4934d3163d194e08efd68a8c3c5d0b0f614e3cbca0ed835fc179a76e6b713ae4
   requires_dist:
   - deprecated
   - requests

@@ -1,9 +1,12 @@
+import json
 from enum import StrEnum
 from collections.abc import Iterable
-from typing import Self
+from typing import Self, Literal
 
-from pydantic import AnyHttpUrl, BaseModel, field_validator, TypeAdapter, ValidationError, model_validator
+from pydantic import AnyHttpUrl, BaseModel, field_validator, TypeAdapter, ValidationError, model_validator, ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, TomlConfigSettingsSource
+
+from auth_config import AuthConfig
 
 
 class PackageDiscoveryChoice(StrEnum):
@@ -35,6 +38,11 @@ class ArchSubdirDiscoveryChoice(StrEnum):
 
 class ArchSubdirList(BaseModel):
     subdirs: list[str]
+    """
+    A list of architecture subdirectories.
+    """
+
+    model_config = ConfigDict(extra="forbid", use_attribute_docstrings=True)
 
 
 class PackageFilter(BaseModel):
@@ -64,13 +72,45 @@ class PackageFilter(BaseModel):
             package_names,
         )
 
+    model_config = ConfigDict(extra="forbid", use_attribute_docstrings=True)
+
+
+class MetadataRetrieval(StrEnum):
+    STREAMED = "streamed"
+    """
+    Currently only supports .conda packages.
+    """
+    OCI_WITH_STREAMED_FALLBACK = "oci_with_streamed_fallback"
+    """
+    Try to use the OCI registry first, then fall back to streamed metadata.
+    Note that the OCI registry is currently only supported for public channels, and uses the name (!) of
+    the channel you have configured.
+    """
+
 
 class Channel(BaseModel):
     url: AnyHttpUrl
+    """
+    The URL of the channel. For conda-forge, this should be https://conda.anaconda.org/conda-forge.
+    """
     rss_enabled: bool = False
+    """
+    Whether to enable the RSS feed for this channel.
+    If true, it is assumed that the channel has an RSS feed at {url}/rss.xml.
+    """
     package_discovery: PackageDiscoveryChoice
+    """
+    How to discover names of packages in the channel.
+    """
     artifact_discovery: ArtifactDiscoveryChoice
+    """
+    How to discover artifacts in the channel, given a package name.
+    """
     arch_subdir_discovery: ArchSubdirDiscoveryChoice | ArchSubdirList = ArchSubdirDiscoveryChoice.CHANNELDATA
+    """
+    How to discover architecture subdirectories in the channel.
+    Use an ArchSubdirList to specify a list of subdirectories.
+    """
     repodata_patches_package: str | None = None
     """
     A package that contains repodata patches, which is expected to have the format of `conda-forge-repodata-patches`.
@@ -112,6 +152,9 @@ class Channel(BaseModel):
         return provenance_url_pattern
 
     package_filter: PackageFilter = PackageFilter()
+    """
+    Filter packages by name or prefix.
+    """
     supports_broken_label: bool = False
     """
     Set this to true if the channel supports a label called "broken" indicating yanked releases.
@@ -127,6 +170,36 @@ class Channel(BaseModel):
     dashboards: list[str] = []
     """
     Must match keys in the AppConfig.dashboards dictionary.
+    """
+
+    metadata_retrieval: MetadataRetrieval
+    """
+    How to retrieve metadata for a package.
+    """
+    auth_profile: str | None = None
+    """
+    Set this to the name of a configured authentication profile in the AuthConfig (read from the environment).
+    
+    For example, in order to configure a private channel, set this to `profileXY`.
+    Then, set the following env variables:
+    - `auth_profileXY_username`
+    - `auth_profileXY_password`
+    """
+
+    # noinspection PyNestedDecorators
+    @field_validator("auth_profile")
+    @classmethod
+    def _check_auth_profile_exists(cls, auth_profile: str | None) -> str | None:
+        if auth_profile is None:
+            return None
+        auth_config = AuthConfig()
+        if auth_profile not in auth_config.profiles:
+            raise ValueError(f"Auth profile {auth_profile} is not defined.")
+        return auth_profile
+
+    override_extensions: list[Literal[".conda"] | Literal[".tar.bz2"]] | None = None
+    """
+    Set this to a list of conda package extensions to override the auto detection of extensions.
     """
 
 
@@ -146,6 +219,8 @@ class Channel(BaseModel):
 
     def get_artifact_download_url(self, arch_subdir: str, package_name: str, version: str, build_string: str, extension: str) -> str:
         return f"{self.url}/{arch_subdir}/{package_name}-{version}-{build_string}.{extension}"
+
+    model_config = ConfigDict(extra="forbid", use_attribute_docstrings=True)
 
 
 class Dashboard(BaseModel):
@@ -178,10 +253,15 @@ class Dashboard(BaseModel):
 
         return url_pattern
 
+    model_config = ConfigDict(extra="forbid", use_attribute_docstrings=True)
+
 
 
 class AppConfig(BaseSettings):
     channels: dict[str, Channel]
+    """
+    All channels that should be available. The key is the channel name.
+    """
 
     # noinspection PyNestedDecorators
     @field_validator("channels")
@@ -195,7 +275,15 @@ class AppConfig(BaseSettings):
         return channels
 
     dashboards: dict[str, Dashboard] = {}
+    """
+    Dashboards are other applications that can be linked to from the package browser.
+    """
+
     enable_filepath_search: bool = True
+    """
+    Whether to enable the file path search feature.
+    The file path search feature sends information about your query to an API provided by Quansight.
+    """
 
     @model_validator(mode="after")
     def _validate_dashboards(self) -> Self:
@@ -205,7 +293,7 @@ class AppConfig(BaseSettings):
                     raise ValueError(f"Dashboard {dashboard_name} is not defined.")
         return self
 
-    model_config = SettingsConfigDict(toml_file="app_config.toml")
+    model_config = SettingsConfigDict(toml_file="app_config.toml", extra="forbid", use_attribute_docstrings=True)
 
     @classmethod
     def settings_customise_sources(
@@ -217,3 +305,12 @@ class AppConfig(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (TomlConfigSettingsSource(settings_cls),)
+
+
+def export_json_schema():
+    with open("app_config.schema.json", "w") as f:
+        json.dump(AppConfig.model_json_schema(), f, indent=2)
+
+
+if __name__ == '__main__':
+    export_json_schema()

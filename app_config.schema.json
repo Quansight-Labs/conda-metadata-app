@@ -1,0 +1,292 @@
+{
+  "$defs": {
+    "ArchSubdirDiscoveryChoice": {
+      "const": "channeldata",
+      "enum": [
+        "channeldata"
+      ],
+      "title": "ArchSubdirDiscoveryChoice",
+      "type": "string"
+    },
+    "ArchSubdirList": {
+      "additionalProperties": false,
+      "properties": {
+        "subdirs": {
+          "description": "A list of architecture subdirectories.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Subdirs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "subdirs"
+      ],
+      "title": "ArchSubdirList",
+      "type": "object"
+    },
+    "ArtifactDiscoveryChoice": {
+      "enum": [
+        "anaconda",
+        "repodata"
+      ],
+      "title": "ArtifactDiscoveryChoice",
+      "type": "string"
+    },
+    "Channel": {
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "description": "The URL of the channel. For conda-forge, this should be https://conda.anaconda.org/conda-forge.",
+          "format": "uri",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "rss_enabled": {
+          "default": false,
+          "description": "Whether to enable the RSS feed for this channel.\nIf true, it is assumed that the channel has an RSS feed at {url}/rss.xml.",
+          "title": "Rss Enabled",
+          "type": "boolean"
+        },
+        "package_discovery": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/PackageDiscoveryChoice"
+            }
+          ],
+          "description": "How to discover names of packages in the channel."
+        },
+        "artifact_discovery": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ArtifactDiscoveryChoice"
+            }
+          ],
+          "description": "How to discover artifacts in the channel, given a package name."
+        },
+        "arch_subdir_discovery": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArchSubdirDiscoveryChoice"
+            },
+            {
+              "$ref": "#/$defs/ArchSubdirList"
+            }
+          ],
+          "default": "channeldata",
+          "description": "How to discover architecture subdirectories in the channel.\nUse an ArchSubdirList to specify a list of subdirectories.",
+          "title": "Arch Subdir Discovery"
+        },
+        "repodata_patches_package": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A package that contains repodata patches, which is expected to have the format of `conda-forge-repodata-patches`.\nFor conda-forge, this should be `conda-forge-repodata-patches`.\nThe package is expected to be available in the channel.",
+          "title": "Repodata Patches Package"
+        },
+        "map_conda_forge_package_to_feedstock": {
+          "default": false,
+          "description": "Enable this for conda-forge to map package names to feedstock names.\nThis is used for provenance URLs (see below).\n\nIf this is False, the package name is used as the feedstock name.",
+          "title": "Map Conda Forge Package To Feedstock",
+          "type": "boolean"
+        },
+        "provenance_url_pattern": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A URL pattern to link to the provenance of a package. The URL pattern should contain a `{feedstock}` placeholder\nfor the feedstock (!) name (see map_conda_forge_package_to_feedstock).\nEach placeholder will be replaced with the feedstock name.\n\nFor conda-forge, this should be https://github.com/conda-forge/{feedstock}-feedstock.\nA remote URL present in the metadata always takes precedence over this URL pattern.",
+          "title": "Provenance Url Pattern"
+        },
+        "package_filter": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/PackageFilter"
+            }
+          ],
+          "default": {
+            "allowed_names": [],
+            "allowed_prefixes": []
+          },
+          "description": "Filter packages by name or prefix."
+        },
+        "supports_broken_label": {
+          "default": false,
+          "description": "Set this to true if the channel supports a label called \"broken\" indicating yanked releases.\nCurrently, this is only respected if artifact_discovery is set to \"anaconda\".",
+          "title": "Supports Broken Label",
+          "type": "boolean"
+        },
+        "dashboards": {
+          "default": [],
+          "description": "Must match keys in the AppConfig.dashboards dictionary.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Dashboards",
+          "type": "array"
+        },
+        "metadata_retrieval": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MetadataRetrieval"
+            }
+          ],
+          "description": "How to retrieve metadata for a package."
+        },
+        "auth_profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set this to the name of a configured authentication profile in the AuthConfig (read from the environment).\n\nFor example, in order to configure a private channel, set this to `profileXY`.\nThen, set the following env variables:\n- `auth_profileXY_username`\n- `auth_profileXY_password`",
+          "title": "Auth Profile"
+        },
+        "override_extensions": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "const": ".conda",
+                    "enum": [
+                      ".conda"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "const": ".tar.bz2",
+                    "enum": [
+                      ".tar.bz2"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set this to a list of conda package extensions to override the auto detection of extensions.",
+          "title": "Override Extensions"
+        }
+      },
+      "required": [
+        "url",
+        "package_discovery",
+        "artifact_discovery",
+        "metadata_retrieval"
+      ],
+      "title": "Channel",
+      "type": "object"
+    },
+    "Dashboard": {
+      "additionalProperties": false,
+      "properties": {
+        "url_pattern": {
+          "description": "The URL pattern of the dashboard. The URL pattern can contain the following placeholders within curly {} braces:\n\n- `channel`: The channel name. If the channel name contains a slash, only the second part is used.\n- `name`: The name of the package.\n- `version`: The version of the package.\n- `subdir`: The architecture subdirectory.",
+          "title": "Url Pattern",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url_pattern"
+      ],
+      "title": "Dashboard",
+      "type": "object"
+    },
+    "MetadataRetrieval": {
+      "enum": [
+        "streamed",
+        "oci_with_streamed_fallback"
+      ],
+      "title": "MetadataRetrieval",
+      "type": "string"
+    },
+    "PackageDiscoveryChoice": {
+      "enum": [
+        "channeldata",
+        "repodata"
+      ],
+      "title": "PackageDiscoveryChoice",
+      "type": "string"
+    },
+    "PackageFilter": {
+      "additionalProperties": false,
+      "description": "By default, no packages are filtered. By setting allowed_names or allowed_prefixes, only packages that match\nthe criteria will be considered.",
+      "properties": {
+        "allowed_names": {
+          "default": [],
+          "description": "Whitelist of package names. Only packages with names in this list will be considered.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Allowed Names",
+          "type": "array"
+        },
+        "allowed_prefixes": {
+          "default": [],
+          "description": "Whitelist of package prefixes.\nOnly packages with names that start with one of the prefixes in this list will be considered.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Allowed Prefixes",
+          "type": "array"
+        }
+      },
+      "title": "PackageFilter",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "channels": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Channel"
+      },
+      "description": "All channels that should be available. The key is the channel name.",
+      "title": "Channels",
+      "type": "object"
+    },
+    "dashboards": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Dashboard"
+      },
+      "default": {},
+      "description": "Dashboards are other applications that can be linked to from the package browser.",
+      "title": "Dashboards",
+      "type": "object"
+    },
+    "enable_filepath_search": {
+      "default": true,
+      "description": "Whether to enable the file path search feature.\nThe file path search feature sends information about your query to an API provided by Quansight.",
+      "title": "Enable Filepath Search",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "channels"
+  ],
+  "title": "AppConfig",
+  "type": "object"
+}
