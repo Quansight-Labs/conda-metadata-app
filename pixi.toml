@@ -9,7 +9,7 @@ platforms = ["linux-64", "win-64", "osx-arm64", "osx-64"]
 [tasks]
 dev = "streamlit run --server.runOnSave=true app.py"
 deploy = "streamlit run --server.headless=true --global.developmentMode=false app.py"
-generate-schema = "python app_config.py"
+schema = "python app_config.py"
 
 [dependencies]
 python = "3.12.*"
