@@ -1,3 +1,4 @@
+#:schema ./app_config.schema.json
 enable_filepath_search = false
 
 [channels.conda-forge]
