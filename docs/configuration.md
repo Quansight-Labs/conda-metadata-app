@@ -4,12 +4,27 @@ The `app_config.toml` is a configuration file that is used to setup the `conda-m
 
 ## Global Configurations
 
-- `enable_filepath_search`: This feature flag decides whether the file path search feature should be enabled. This feature sends information about your query to an API provided by Quansight.
+- `enable_filepath_search`: This feature flag decides whether the file path search feature should be enabled.
+
+The file path search is reachable from the left sidebar.
+
+It sends a filepath you enter to an API provided by Quansight, which contain a file matching the filepath.
+This feature is useful for finding conda packages that contain a specific file.
 
 ```toml
-enable_filepath_search = false
+enable_filepath_search = true  # set to false to disable
 ```
-In the above example, the file path search feature is disabled (set to false).
+
+If enabled, the file path search looks like this:
+
+![File Path Search](assets/filepath_search_enabled_dark.png#gh-dark-mode-only)
+![File Path Search](assets/filepath_search_enabled_light.png#gh-light-mode-only)
+
+Due to limitations of Streamlit, disabling this feature will not remove the search bar from the sidebar.
+Instead, it will show a message that the feature is disabled:
+
+![File Path Search Disabled](assets/filepath_search_disabled_dark.png#gh-dark-mode-only)
+![File Path Search Disabled](assets/filepath_search_disabled_light.png#gh-light-mode-only)
 
 ## Configuring Channels
 
