@@ -85,6 +85,11 @@ If you enable this feature, make sure your channel supplies an RSS feed at `<cha
 ```toml
 package_discovery = "channeldata"
 ```
+
+In general, `channeldata` is the preferred option as it is more efficient.
+However, some conda package hosters (e.g., Artifactory) may not provide the `channeldata.json` file,
+in which case you can use `repodata` to discover packages.
+
 #### Artifact Discovery
 
 `artifact_discovery`: Determines the method for discovering package artifacts in the channel. Accepts two options:
@@ -97,14 +102,16 @@ artifact_discovery = "anaconda"
 #### Arch Subdirectory (Platform) Discovery
 
 `arch_subdir_discovery`: Determines how to discover all available architectures. Possible choices are:
-- `all`: Try all well-known architectures.
 - `channeldata`: Use channeldata.json to discover architectures.
+ `all`: Try all well-known architectures.
 - A list of architectures to try within a `subdirs` key.
 ```toml
 arch_subdir_discovery = "all"
 # or
 arch_subdir_discovery = { subdirs = ["linux-64", "osx-64", "win-64"] }
 ```
+
+Recommended to use `channeldata` if available, as it is more efficient.
 
 #### Repodata Patches
   
@@ -176,7 +183,7 @@ auth_password = { file = "/var/secrets/artifactory_password" }  # read password 
 #### Metadata Retrieval
 
 `metadata_retrieval`: This key indicates how metadata for a package will be retrieved. It supports two options:
-- `streamed`: Currently only supports .conda packages.
+- `streamed`: Downloads the artifact in-memory. Currently only supports .conda packages.
 - `oci_with_streamed_fallback`: Tries to use the OCI registry first, then falls back to streamed metadata.
 ```toml
 metadata_retrieval = "streamed"
