@@ -2,8 +2,8 @@
 
 The `app_config.toml` is a configuration file that is used to setup the `conda-metadata-app` which allows you to browse metadata of conda packages. 
 
-## Global Configurations
-
+## Global Configuration
+### File Path Search
 - `enable_filepath_search`: This feature flag decides whether the file path search feature should be enabled.
 
 The file path search is reachable from the left sidebar.
