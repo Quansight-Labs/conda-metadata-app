@@ -1,12 +1,13 @@
 import functools
 import json
 import os
-from enum import StrEnum
 from collections.abc import Iterable
-from typing import Self, Literal, Any
+from enum import StrEnum
+from typing import Self, Literal
 
 from pydantic import AnyHttpUrl, BaseModel, field_validator, TypeAdapter, ValidationError, model_validator, ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, TomlConfigSettingsSource
+
 
 class HashableBaseModel(BaseModel):
     def __hash__(self):
@@ -385,7 +386,7 @@ class AppConfig(BaseSettings):
         return (TomlConfigSettingsSource(settings_cls),)
 
 
-def export_json_schema():
+def export_json_schema() -> None:
     with open("app_config.schema.json", "w") as f:
         json.dump(AppConfig.model_json_schema(), f, indent=2)
 

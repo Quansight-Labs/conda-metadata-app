@@ -2,6 +2,7 @@ import json
 import os
 import re
 import typing
+from typing import Any
 from collections.abc import Iterable
 from contextlib import closing
 from datetime import datetime
@@ -11,6 +12,7 @@ from io import StringIO
 from tempfile import gettempdir
 
 import zstandard as zstd
+from conda_forge_metadata.types import ArtifactData
 from rattler.platform import PlatformLiteral
 from requests.auth import HTTPBasicAuth
 
@@ -47,7 +49,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-def bar_esc(s):
+def bar_esc(s: str) -> str:
     "Escape vertical bars in tables"
     return s.replace("|", "\\|")
 
@@ -108,7 +110,7 @@ def rss_data(channel_name: str) -> ET.ElementTree | None:
 
 
 @st.cache_resource(ttl="15m", max_entries=10)
-def get_channeldata(channel_name: str):
+def get_channeldata(channel_name: str) -> dict:
     r = _make_http_session(channel_name).get(get_channel_config(channel_name).channeldata_url)
     r.raise_for_status()
     return r.json()
@@ -167,7 +169,7 @@ def get_all_packages_sections_from_repodata(channel_name: str, arch_subdir: str)
 
 
 @st.cache_resource(ttl="15m", max_entries=1000)
-def anaconda_api_data(package_name: str, channel_name: str):
+def anaconda_api_data(package_name: str, channel_name: str) -> dict:
     if channel_name.startswith("pkgs/"):
         channel_name = channel_name.split("/", 1)[1]
     r = requests.get(f"https://api.anaconda.org/package/{channel_name}/{package_name}/files")
@@ -176,7 +178,7 @@ def anaconda_api_data(package_name: str, channel_name: str):
 
 
 @st.cache_resource(ttl="1d", max_entries=10)
-def repodata_patches(channel_name: str):
+def repodata_patches(channel_name: str) -> dict[str, Any]:
     """
     This function assumes that the artifact discovery mode for the channel is "anaconda".
     """
@@ -194,9 +196,9 @@ def repodata_patches(channel_name: str):
 
 
 @st.cache_resource(ttl="1d", max_entries=1000)
-def provenance_urls(package_name: str, channel: str, data: dict | None = None):
+def provenance_urls(package_name: str, channel: str, data: dict | None = None) -> list[str]:
     if not package_name or not data:
-        return ""
+        return [""]
     if data is not None:
         remote_url = data.get("rendered_recipe", {}).get("extra", {}).get("remote_url")
         if remote_url:
@@ -211,7 +213,7 @@ def provenance_urls(package_name: str, channel: str, data: dict | None = None):
 
     url_pattern = get_channel_config(channel).provenance_url_pattern
     if not url_pattern:
-        return ""
+        return [""]
 
     feedstock_names: list[str]
     if get_channel_config(channel).map_conda_forge_package_to_feedstock:
@@ -321,7 +323,8 @@ def get_arch_subdirs_for_package(package_name: str, channel_name: str, with_brok
 
 
 
-def _best_version_in_subdir(package_name: str, channel_name: str, with_broken: bool = False):
+def _best_version_in_subdir(package_name: str, channel_name: str, with_broken: bool = False) \
+        -> tuple[str, str] | tuple[None, None]:
     if not package_name:
         return None, None
     subdirs_plus_best_version = sorted(
@@ -380,7 +383,8 @@ def get_versions(channel_name: str, subdir: str, package_name: str, with_broken:
     )
 
 
-def _build_mapping_from_anaconda_api(package_name: str, subdir: str, version: str, channel: str, with_broken: bool = False) -> dict[str, int]:
+def _build_mapping_from_anaconda_api(package_name: str, subdir: str, version: str, channel: str,
+                                     with_broken: bool = False) -> dict[str, int]:
     """
     Returns a mapping from build string to build number.
     """
@@ -410,7 +414,7 @@ def _build_mapping_from_repodata(package_name: str, subdir: str, version: str, c
     }
 
 
-def builds(package_name: str, subdir: str, version: str, channel: str, with_broken: bool = False):
+def builds(package_name: str, subdir: str, version: str, channel: str, with_broken: bool = False) -> list[str]:
     if not package_name or not subdir or not version:
         return []
 
@@ -432,7 +436,8 @@ def builds(package_name: str, subdir: str, version: str, channel: str, with_brok
     ]
 
 
-def _extensions_from_anaconda_api(package_name: str, subdir: str, version: str, build: str, channel: str, with_broken: bool = False):
+def _extensions_from_anaconda_api(package_name: str, subdir: str, version: str, build: str, channel: str,
+                                  with_broken: bool = False) -> set[str]:
     data = anaconda_api_data(package_name, channel)
     return {
         ("conda" if pkg["basename"].endswith(".conda") else "tar.bz2")
@@ -445,7 +450,7 @@ def _extensions_from_anaconda_api(package_name: str, subdir: str, version: str, 
     }
 
 
-def _extensions_from_repodata(package_name: str, subdir: str, version: str, build: str, channel: str):
+def _extensions_from_repodata(package_name: str, subdir: str, version: str, build: str, channel: str) -> set[str]:
     """
     with_broken cannot be considered here as repodata does not include yanked packages.
     """
@@ -459,7 +464,8 @@ def _extensions_from_repodata(package_name: str, subdir: str, version: str, buil
     }
 
 
-def extensions(package_name: str, subdir: str, version: str, build: str, channel: str, with_broken: bool = False):
+def extensions(package_name: str, subdir: str, version: str, build: str, channel: str,
+               with_broken: bool = False) -> list[str]:
     if not package_name or not subdir or not version or not build:
         return []
     if override_extensions := get_channel_config(channel).override_extensions:
@@ -474,7 +480,7 @@ def extensions(package_name: str, subdir: str, version: str, build: str, channel
     raise RuntimeError("Invalid artifact discovery choice. This is an implementation error.")
 
 
-def _is_broken(package_name: str, subdir: str, version: str, build: str, extension: str, channel: str):
+def _is_broken(package_name: str, subdir: str, version: str, build: str, extension: str, channel: str) -> bool:
     channel_config = get_channel_config(channel)
     if channel_config.artifact_discovery != ArtifactDiscoveryChoice.ANACONDA_API or not channel_config.supports_broken_label:
         return False  # we don't know
@@ -501,7 +507,7 @@ def patched_repodata(channel: str, subdir: str, artifact: str) -> tuple[dict, bo
     return patched_data, yanked
 
 
-def artifact_metadata(channel: str, subdir: str, artifact: str):
+def artifact_metadata(channel: str, subdir: str, artifact: str) -> ArtifactData | None:
     channel_config = get_channel_config(channel)
 
     if channel_config.metadata_retrieval == MetadataRetrieval.OCI_WITH_STREAMED_FALLBACK:
@@ -534,7 +540,7 @@ def artifact_metadata(channel: str, subdir: str, artifact: str):
     )
 
 
-def is_archived_repo(repo_url_or_owner_repo):
+def is_archived_repo(repo_url_or_owner_repo) -> bool:
     owner, repo = repo_url_or_owner_repo.split("/")[-2:]
     if owner != "conda-forge":
         return False
@@ -544,7 +550,7 @@ def is_archived_repo(repo_url_or_owner_repo):
     return False
 
 
-def parse_url_params():
+def parse_url_params() -> tuple[dict[str, Any], bool]:
     """
     Allowed query params:
     - q: channel
