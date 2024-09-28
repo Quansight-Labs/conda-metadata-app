@@ -115,10 +115,13 @@ Recommended to use `channeldata` if available, as it is more efficient.
 
 #### Repodata Patches
   
-`repodata_patches_package`: Specifies a package that includes patches for "repodata". It is expected to be available in the channel.
+`repodata_patches_package`: Specifies a package that includes patches for "repodata".
+It is expected to be available in the channel.
 ```toml
 repodata_patches_package = "conda-forge-repodata-patches"
 ```
+
+Refer to [this blogpost by prefix.dev](https://prefix.dev/blog/repodata_patching) to understand the concept of repodata patches.
 
 #### Package Name to Feedstock Mapping
 
