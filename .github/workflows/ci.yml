@@ -14,4 +14,10 @@ jobs:
       - name: Regenerate the schema
         run: pixi run schema
       - name: Check for schema changes
-        run: git diff --exit-code
+        run: |
+          git diff --exit-code
+          if [ $? -eq 1 ]
+          then
+            echo "Error: The schema is out of date. Please run 'pixi run schema' and commit the changes."
+            exit 1
+          fi
