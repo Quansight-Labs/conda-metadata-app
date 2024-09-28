@@ -4,7 +4,8 @@ A streamlit app to query metadata from conda packages.
 > [!TIP]
 > A public instance of this app is available at [**conda-metadata-app.streamlit.app**](https://conda-metadata-app.streamlit.app).
 
-![Main Screenshot](docs/assets/main_screenshot.png)
+![Main Screenshot](docs/assets/main_screenshot_dark.png#gh-dark-mode-only)
+![Main Screenshot](docs/assets/main_screenshot_light.png#gh-light-mode-only)
 
 ## Development
 Use `pixi run dev` to run the app in development mode, and `pixi run deploy` to run a production version of the app.
