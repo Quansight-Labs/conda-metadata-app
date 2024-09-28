@@ -1,5 +1,5 @@
 #:schema ./app_config.schema.json
-enable_filepath_search = false
+enable_filepath_search = true
 
 [channels.conda-forge]
 url = "https://conda.anaconda.org/conda-forge"
