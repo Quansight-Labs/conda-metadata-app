@@ -63,10 +63,19 @@ url = "https://repo.prefix.dev/channel-name"
 ```
 
 #### RSS Feed
-`rss_enabled`: If set to `true`, it enables RSS feed for this channel.
+`rss_enabled`: If set to `true`, it enables the RSS feed for this channel.
 ```toml
 rss_enabled = true
 ```
+
+The RSS feed is shown by default if a channel in the left sidebar is selected. It displays
+the latest artifacts uploaded to the channel and looks like this:
+
+![RSS Feed](assets/rss_dark.png#gh-dark-mode-only)
+![RSS Feed](assets/rss_light.png#gh-light-mode-only)
+
+If you enable this feature, make sure your channel supplies an RSS feed at `<channel_url>/rss.xml`.
+
 #### Package Discovery
 
 `package_discovery`: This determines the method for discovering package names in the channel. Accepts two options:
