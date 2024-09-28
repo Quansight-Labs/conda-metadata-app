@@ -498,7 +498,7 @@ def _is_broken(package_name: str, subdir: str, version: str, build: str, extensi
 
 def patched_repodata(channel: str, subdir: str, artifact: str) -> tuple[dict, bool]:
     """
-    Thus function assumes that the artifact discovery mode for the channel is "anaconda".
+    This function assumes that the artifact discovery mode for the channel is "anaconda".
     """
     patches = repodata_patches(channel)[subdir]
     key = "packages.conda" if artifact.endswith(".conda") else "packages"
@@ -511,7 +511,6 @@ def artifact_metadata(channel: str, subdir: str, artifact: str) -> ArtifactData 
     channel_config = get_channel_config(channel)
 
     if channel_config.metadata_retrieval == MetadataRetrieval.OCI_WITH_STREAMED_FALLBACK:
-        print(artifact)
         # OCI requests are never authenticated for now
         metadata = get_artifact_info_as_json(
             channel=channel,

@@ -1,4 +1,4 @@
-# Comprehensive Guide to Configuring the `app_config.toml` File
+# Configure `app_config.toml`
 
 The `app_config.toml` is a configuration file that is used to setup the `conda-metadata-app` which allows you to browse metadata of conda packages. 
 
@@ -36,7 +36,7 @@ The above example shows a channel with `pkgs/main` as its custom name.
 
 ### Properties
 #### Channel URL
-`url`: The URL for the channel. For `conda-forge`, this value should be configured as follows:
+`url`: The URL for the channel.
 ```toml
 url = "https://conda.anaconda.org/conda-forge"
 # or
@@ -132,7 +132,7 @@ dashboards = ["anaconda", "ghcr"]
 `auth_username`, `auth_password`, `auth_quetz_token`, `auth_bearer_token`: Use these to configure authentication for the channel.
 
 ```toml
-# HTTP Basic Authentication (for Artifactory)
+# HTTP Basic Authentication (for example Artifactory)
 auth_username = "username"
 auth_password = "password"
 # or
