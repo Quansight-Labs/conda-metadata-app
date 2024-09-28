@@ -132,13 +132,6 @@ is used to map the package name to the feedstock name.
 map_conda_forge_package_to_feedstock = true
 ```
 
-#### Provenance URL Pattern
-
-`provenance_url_pattern`: This provides a URL pattern to link to the source of a package. The `{feedstock}` placeholder is replaced with the feedstock name.
-```toml
-provenance_url_pattern = "https://github.com/conda-forge/{feedstock}-feedstock"
-```
-
 #### Package Filter
 
 `package_filter`: This property provides mechanism to filter packages by name or prefix.
@@ -154,12 +147,26 @@ package_filter = { allowed_names = ["r", "rpy2", "rstudio"], allowed_prefixes = 
 supports_broken_label = true
 ```
 
+#### Provenance URL Pattern
+
+`provenance_url_pattern`: This provides a URL pattern to link to the source of a package. The `{feedstock}` placeholder is replaced with the feedstock name.
+```toml
+provenance_url_pattern = "https://github.com/conda-forge/{feedstock}-feedstock"
+```
+
 #### Dashboards
 
 `dashboards`: List of dashboards that should be linked from the package browser. Dashboards are defined in the global `dashboards` section (see below).
 ```toml
 dashboards = ["anaconda", "ghcr"]
 ```
+
+Dashboards are shown together with the provenance URL in the details of a package:
+
+![Provenance Grid Overview](./assets/provenance_dark.png#gh-dark-mode-only)
+![Provenance Grid Overview](./assets/provenance_light.png#gh-light-mode-only)
+
+Here, three dashboards are linked: `anaconda`, `ghcr`, and `prefix`.
 
 #### Authentication
 
