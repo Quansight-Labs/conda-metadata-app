@@ -8,7 +8,7 @@ The `app_config.toml` is a configuration file that is used to setup the `conda-m
 
 The file path search is reachable from the left sidebar.
 
-It sends a filepath you enter to an API provided by Quansight, which contain a file matching the filepath.
+It sends a filepath you enter to an API provided by Quansight, to find conda packages containing a file matching the filepath.
 This feature is useful for finding conda packages that contain a specific file.
 
 ```toml
