@@ -28,7 +28,7 @@ Instead, it will show a message that the feature is disabled:
 
 ## Configuring Channels
 
-Channels are package hosts available for browsing via the application. Every channel is added under the `[channels]` section and have their unique subsections, defined as `[channels.<channel_name>]`, where `<channel_name>` is a custom name that you provide, which will appear in the app and act as the identifier for that channel.
+Channels are package hosts available for browsing via the application. Every channel is added under the `[channels]` section and has its unique subsection, defined as `[channels.<channel_name>]`, where `<channel_name>` is a custom name that you provide, which will appear in the app and act as the identifier for that channel.
 
 ```toml
 [channels.conda-forge]
