@@ -5,10 +5,10 @@ import requests
 import streamlit as st
 from streamlit_searchbox import st_searchbox
 
-FIFTEEN_MINS = 60 * 15
+from app import app_config
 
 
-@st.cache_resource(ttl=FIFTEEN_MINS, max_entries=100)
+@st.cache_resource(ttl="15m", max_entries=100)
 def autocomplete_paths(query):
     time.sleep(0.25)
     try:
@@ -48,6 +48,11 @@ st.set_page_config(
     page_icon="📦",
     initial_sidebar_state="collapsed",
 )
+
+if not app_config().enable_filepath_search:
+    st.error("File path search is disabled in the app configuration.")
+    st.stop()
+
 c1, c2 = st.columns([1, 0.25])
 with c1:
     path_to_search = st_searchbox(
