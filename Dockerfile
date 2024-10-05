@@ -17,4 +17,11 @@ COPY --from=build --chmod=0555 /entrypoint.sh /
 
 WORKDIR /app
 EXPOSE 8080
-CMD ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["streamlit", \
+     "run", \
+     "--server.headless=true", \
+     "--global.developmentMode=false", \
+     "--browser.gatherUsageStats=false", \
+     "--server.port=8080", \
+     "app_proxy.py"]

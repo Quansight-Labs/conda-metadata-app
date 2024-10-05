@@ -3,9 +3,8 @@
 set -eux
 
 pixi run -e build build-wheel
-pixi install -e default
+pixi install -e default --locked
 pixi run -e default postinstall-production
 echo "#!/bin/sh" > /entrypoint.sh
-pixi shell-hook -e default >> /entrypoint.sh
-
-echo 'streamlit run --server.headless=true --global.developmentMode=false --browser.gatherUsageStats=false --server.port=8080 app_proxy.py' >> /entrypoint.sh
+pixi shell-hook -e default -s bash >> /entrypoint.sh
+echo 'exec "$@"' >> /entrypoint.sh
