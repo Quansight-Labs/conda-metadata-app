@@ -27,7 +27,7 @@ Refer to the [Configuration Documentation](docs/configuration.md) for more infor
 A public Docker image of this app is available. To run the Docker app, execute the following command:
 
 ```bash
-docker run -p 8080:8080 ghcr.io/ytausch/conda-metadata-app:latest
+docker run -p 8080:8080 ghcr.io/Quansight-Labs/conda-metadata-app:latest
 ```
 
 By default, the image uses the default configuration located at [app_config.toml](app_config.toml).
@@ -35,6 +35,6 @@ By default, the image uses the default configuration located at [app_config.toml
 To supply a custom configuration, mount a file to `/app/app_config.toml`:
 
 ```bash
-docker run -p 8080:8080 -v /path/to/app_config.toml:/app/app_config.toml ghcr.io/ytausch/conda-metadata-app:latest
+docker run -p 8080:8080 -v /path/to/app_config.toml:/app/app_config.toml ghcr.io/Quansight-Labs/conda-metadata-app:latest
 ```
 Note that if you use environment variables or secret files for credentials, you will need to set/mount those as well.

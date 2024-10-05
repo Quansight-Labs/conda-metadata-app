@@ -41,7 +41,7 @@ jobs:
         id: meta
         with:
           images: |
-            ghcr.io/ytausch/conda-metadata-app
+            ghcr.io/Quansight-Labs/conda-metadata-app
           tags: | # no explicit versioning, always overwrite latest
             type=raw,value=latest,enable=true
       - name: Build and push
