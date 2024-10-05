@@ -23,10 +23,6 @@ jobs:
     steps:
       - name: Checkout branch
         uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
-        with:
-          # need git information for metadata
-          fetch-depth: 0
-          ref: ${{ github.head_ref }}
 
       - name: Login into GHCR
         if: github.ref_name == 'main'
@@ -41,7 +37,7 @@ jobs:
         id: meta
         with:
           images: |
-            ghcr.io/Quansight-Labs/conda-metadata-app
+            ghcr.io/${{ github.repository }}
           tags: | # no explicit versioning, always overwrite latest
             type=raw,value=latest,enable=true
       - name: Build and push
@@ -52,5 +48,3 @@ jobs:
           file: Dockerfile
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # need git information for metadata
-          context: .
