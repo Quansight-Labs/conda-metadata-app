@@ -12,6 +12,9 @@ Use `pixi run dev` to run the app in development mode, and `pixi run deploy` to 
 
 If you modified the configuration schema (see below), use `pixi run schema` to update the schema.
 
+### Dependencies
+Please note that this project defines dependencies in both a pixi project file (`pixi.toml`) and
+
 ## Custom Configuration
 
 Refer to the [Configuration Documentation](docs/configuration.md) for more information on how to customize the app.

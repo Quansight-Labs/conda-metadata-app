@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "conda-metadata-app"
+description = "A streamlit app to query metadata from conda packages"
+version = "0.1.0"
+authors = [{ name = "jaimergp", email = "jaimergp@users.noreply.github.com" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.12"
+
+[project.urls]
+repository = "https://github.com/Quansight-Labs/conda-metadata-app"

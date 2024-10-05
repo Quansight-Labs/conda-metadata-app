@@ -4,22 +4,32 @@ version = "0.1.0"
 description = "A streamlit app to query metadata from conda packages"
 authors = ["jaimergp <jaimergp@users.noreply.github.com>"]
 channels = ["conda-forge"]
-platforms = ["linux-64", "win-64", "osx-arm64", "osx-64"]
+platforms = ["linux-64", "win-64", "osx-arm64", "osx-64", "linux-aarch64"]
 
 [tasks]
-dev = "streamlit run --server.runOnSave=true app.py"
-deploy = "streamlit run --server.headless=true --global.developmentMode=false app.py"
+dev = "streamlit run --server.runOnSave=true app_proxy.py"
+deploy = "streamlit run --server.headless=true --global.developmentMode=false app_proxy.py"
 schema = "python app_config.py"
+postinstall-production = "pip install --no-deps --disable-pip-version-check dist/conda_metadata_app-*.whl"
 
 [dependencies]
 python = "3.12.*"
-pip = "23.3.2.*"
 pydantic-settings = ">=2.4.0,<3"
 pydantic = ">=2.8.2,<3"
 typing-extensions = ">=4.12.2,<5"
 zstandard = ">=0.23.0,<0.24"
 py-rattler = ">=0.7.0,<0.8"
 setuptools = "*"
+
+[host-dependencies]
+pip = "*"
+
+[feature.build.dependencies]
+python-build = "*"
+hatchling = "*"
+[feature.build.tasks]
+postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ."
+build-wheel = "python -m build --no-isolation --wheel ."
 
 [feature.dev.dependencies]
 pixi-pycharm = ">=0.0.6,<0.0.7"
@@ -31,5 +41,6 @@ streamlit = ">=1.38.0,<2"
 streamlit-searchbox = "==0.1.16"
 
 [environments]
-default = {}
+default = []    # includes default feature
+build = ["build"]
 dev = { features = ["dev"], no-default-feature = true }

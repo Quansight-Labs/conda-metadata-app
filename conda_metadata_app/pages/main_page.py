@@ -16,8 +16,9 @@ from conda_forge_metadata.types import ArtifactData
 from rattler.platform import PlatformLiteral
 from requests.auth import HTTPBasicAuth
 
-from app_config import AppConfig, Channel, PackageDiscoveryChoice, ArchSubdirDiscoveryChoice, ArchSubdirList, \
-    ArtifactDiscoveryChoice, MetadataRetrieval, Secret
+from conda_metadata_app.app_config import (AppConfig, Channel, PackageDiscoveryChoice, ArchSubdirDiscoveryChoice,
+                                           ArchSubdirList, ArtifactDiscoveryChoice, MetadataRetrieval, Secret)
+from conda_metadata_app.version_order import VersionOrder
 
 if not os.environ.get("CACHE_DIR"):
     from conda_oci_mirror import defaults
@@ -35,8 +36,6 @@ from conda_package_streaming.url import conda_reader_for_url
 from ruamel.yaml import YAML
 from streamlit.logger import get_logger
 from xml.etree import ElementTree as ET
-
-from version_order import VersionOrder
 
 
 yaml = YAML(typ="safe")
