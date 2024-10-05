@@ -1,0 +1,55 @@
+#:schema ./app_config.schema.json
+enable_filepath_search = true
+
+[channels.conda-forge]
+url = "https://conda.anaconda.org/conda-forge"
+rss_enabled = true
+package_discovery = "channeldata"
+artifact_discovery = "anaconda"
+repodata_patches_package = "conda-forge-repodata-patches"
+map_conda_forge_package_to_feedstock = true
+provenance_url_pattern = "https://github.com/conda-forge/{feedstock}-feedstock"
+supports_broken_label = true
+dashboards = ["anaconda", "ghcr", "prefix"]
+metadata_retrieval = "oci_with_streamed_fallback"
+
+[channels.bioconda]
+url = "https://conda.anaconda.org/bioconda"
+rss_enabled = true
+package_discovery = "channeldata"
+artifact_discovery = "anaconda"
+provenance_url_pattern = "https://github.com/bioconda/bioconda-recipes/tree/master/recipes/{feedstock}"
+dashboards = ["anaconda", "ghcr", "prefix"]
+metadata_retrieval = "oci_with_streamed_fallback"
+
+[channels."pkgs/main"]
+url = "https://repo.anaconda.com/pkgs/main"
+rss_enabled = true
+package_discovery = "channeldata"
+artifact_discovery = "anaconda"
+provenance_url_pattern = "https://github.com/AnacondaRecipes/{feedstock}-feedstock"
+dashboards = ["anaconda"]
+metadata_retrieval = "streamed"
+override_extensions = [".conda"]
+
+[channels."pkgs/r"]
+url = "https://repo.anaconda.com/pkgs/r"
+rss_enabled = true
+package_discovery = "channeldata"
+artifact_discovery = "anaconda"
+provenance_url_pattern = "https://github.com/AnacondaRecipes/{feedstock}-feedstock"
+package_filter = { allowed_names = ["r", "rpy2", "rstudio"], allowed_prefixes = ["r-", "_r-", "mro-"] }
+dashboards = ["anaconda"]
+metadata_retrieval = "streamed"
+override_extensions = [".conda"]
+
+# pkgs/msys2 does not seem to offer .conda artifacts; leave out for now
+# [channels."pkgs/msys2"]
+# package_filter = { allowed_prefixes = ["m2-", "m2w64-", "msys2-"] }
+# dashboards = ["anaconda"]
+# override_extensions = [".conda"]
+
+[dashboards]
+anaconda = { url_pattern = "https://anaconda.org/{channel}/{name}/files?version={version}" }
+ghcr = { url_pattern = "https://github.com/orgs/channel-mirrors/packages/container/package/{channel}%2F{subdir}%2F{name}" }
+prefix = { url_pattern = "https://prefix.dev/channels/{channel}/packages/{name}" }
