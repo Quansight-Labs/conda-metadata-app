@@ -9,7 +9,7 @@ platforms = ["linux-64", "win-64", "osx-arm64", "osx-64", "linux-aarch64"]
 [tasks]
 dev = "streamlit run --server.runOnSave=true app_proxy.py"
 deploy = "streamlit run --server.headless=true --global.developmentMode=false app_proxy.py"
-schema = "python app_config.py"
+schema = "python -m conda_metadata_app.app_config"
 postinstall-production = "pip install --no-deps --disable-pip-version-check dist/conda_metadata_app-*.whl"
 
 [dependencies]
