@@ -143,10 +143,11 @@ def get_repodata(channel_name: str, arch_subdir: str) -> dict:
     it falls back to the uncompressed.
     """
     decompressed_repodata = _download_compressed_repodata(channel_name, arch_subdir)
-    channel_config = get_channel_config(channel_name)
 
     if decompressed_repodata is not None:
         return decompressed_repodata
+
+    channel_config = get_channel_config(channel_name)
 
     # fall back to the uncompressed version
     repodata_url = channel_config.get_repodata_url(arch_subdir)
