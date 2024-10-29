@@ -19,6 +19,7 @@ pydantic = ">=2.8.2,<3"
 typing-extensions = ">=4.12.2,<5"
 zstandard = ">=0.23.0,<0.24"
 py-rattler = ">=0.7.0,<0.8"
+setuptools = "*"
 
 [feature.dev.dependencies]
 pixi-pycharm = ">=0.0.6,<0.0.7"

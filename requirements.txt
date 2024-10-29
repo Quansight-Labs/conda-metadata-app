@@ -7,3 +7,4 @@ pydantic==2.9.2
 typing-extensions==4.12.2
 zstandard==0.23.0
 py-rattler==0.7.0
+setuptools
