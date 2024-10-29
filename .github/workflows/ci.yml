@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check-schema-changes:
+    name: Check for Schema Changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+      - name: Regenerate the schema
+        run: pixi run schema
+      - name: Check for schema changes
+        run: |
+          git diff --exit-code
+          if [ $? -eq 1 ]
+          then
+            echo "::error::The schema is out of date. Please run 'pixi run schema' and commit the changes."
+            exit 1
+          fi
