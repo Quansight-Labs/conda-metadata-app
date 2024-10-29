@@ -173,7 +173,11 @@ def get_all_packages_sections_from_repodata(channel_name: str, arch_subdir: str,
     if with_broken:
         for removed_artifact in get_repodata(channel, arch_subdir).get("removed", []):
             removed_artifact: str
-            artifact_basename, artifact_extension = removed_artifact.rsplit(".", 1)
+
+            if removed_artifact.endswith(".tar.bz2"):
+                artifact_basename = removed_artifact.removesuffix(".tar.bz2")
+            else:
+                artifact_basename, _ = removed_artifact.rsplit(".", 1)
             artifact_name, artifact_version, artifact_build = artifact_basename.rsplit("-", 2)
             sections[removed_artifact] = {
                 "name": artifact_name,
