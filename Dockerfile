@@ -11,7 +11,7 @@ RUN ./docker/install.sh
 FROM ubuntu:24.04 AS production
 
 COPY --from=build /app/.pixi/envs/default /app/.pixi/envs/default
-COPY --from=build /app/app_proxy.py /app
+COPY --from=build /app/app.py /app
 COPY --from=build /app/app_config.toml /app
 COPY --from=build --chmod=0555 /entrypoint.sh /
 
@@ -24,4 +24,4 @@ CMD ["streamlit", \
      "--global.developmentMode=false", \
      "--browser.gatherUsageStats=false", \
      "--server.port=8080", \
-     "app_proxy.py"]
+     "app.py"]
