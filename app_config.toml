@@ -30,7 +30,7 @@ artifact_discovery = "anaconda"
 provenance_url_pattern = "https://github.com/AnacondaRecipes/{feedstock}-feedstock"
 dashboards = ["anaconda"]
 metadata_retrieval = "streamed"
-override_extensions = [".conda"]
+override_extensions = ["conda"]
 
 [channels."pkgs/r"]
 url = "https://repo.anaconda.com/pkgs/r"
@@ -41,13 +41,13 @@ provenance_url_pattern = "https://github.com/AnacondaRecipes/{feedstock}-feedsto
 package_filter = { allowed_names = ["r", "rpy2", "rstudio"], allowed_prefixes = ["r-", "_r-", "mro-"] }
 dashboards = ["anaconda"]
 metadata_retrieval = "streamed"
-override_extensions = [".conda"]
+override_extensions = ["conda"]
 
 # pkgs/msys2 does not seem to offer .conda artifacts; leave out for now
 # [channels."pkgs/msys2"]
 # package_filter = { allowed_prefixes = ["m2-", "m2w64-", "msys2-"] }
 # dashboards = ["anaconda"]
-# override_extensions = [".conda"]
+# override_extensions = ["conda"]
 
 [dashboards]
 anaconda = { url_pattern = "https://anaconda.org/{channel}/{name}/files?version={version}" }
