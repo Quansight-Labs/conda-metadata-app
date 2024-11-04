@@ -1,12 +1,29 @@
+"""
+Pydantic models to generate the schemas of the app_config.toml configuration files
+"""
+
 import functools
 import json
 import os
 from collections.abc import Iterable
 from enum import StrEnum
-from typing import Self, Literal
+from typing import Literal, Self
 
-from pydantic import AnyHttpUrl, BaseModel, field_validator, TypeAdapter, ValidationError, model_validator, ConfigDict
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, TomlConfigSettingsSource
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConfigDict,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    TomlConfigSettingsSource,
+)
 
 
 class HashableBaseModel(BaseModel):
@@ -63,6 +80,7 @@ class PackageFilter(BaseModel):
     By default, no packages are filtered. By setting allowed_names or allowed_prefixes, only packages that match
     the criteria will be considered.
     """
+
     allowed_names: list[str] = []
     """
     Whitelist of package names. Only packages with names in this list will be considered.
@@ -163,7 +181,9 @@ class Channel(BaseModel):
     """
     How to discover artifacts in the channel, given a package name.
     """
-    arch_subdir_discovery: ArchSubdirDiscoveryChoice | ArchSubdirList = ArchSubdirDiscoveryChoice.CHANNELDATA
+    arch_subdir_discovery: ArchSubdirDiscoveryChoice | ArchSubdirList = (
+        ArchSubdirDiscoveryChoice.CHANNELDATA
+    )
     """
     How to discover architecture subdirectories in the channel.
     Use an ArchSubdirList to specify a list of subdirectories.
@@ -178,7 +198,7 @@ class Channel(BaseModel):
     """
     Enable this for conda-forge to map package names to feedstock names.
     This is used for provenance URLs (see below).
-    
+
     If this is False, the package name is used as the feedstock name.
     """
     provenance_url_pattern: str | None = None
@@ -186,7 +206,7 @@ class Channel(BaseModel):
     A URL pattern to link to the provenance of a package. The URL pattern should contain a `{feedstock}` placeholder
     for the feedstock (!) name (see map_conda_forge_package_to_feedstock).
     Each placeholder will be replaced with the feedstock name.
-    
+
     For conda-forge, this should be https://github.com/conda-forge/{feedstock}-feedstock.
     A remote URL present in the metadata always takes precedence over this URL pattern.
     """
@@ -204,7 +224,9 @@ class Channel(BaseModel):
         try:
             TypeAdapter(AnyHttpUrl).validate_python(replaced_url)
         except ValidationError:
-            raise ValueError("provenance_url_pattern must be a valid URL pattern with a {} placeholder.")
+            raise ValueError(
+                "provenance_url_pattern must be a valid URL pattern with a {} placeholder."
+            )
 
         return provenance_url_pattern
 
@@ -220,8 +242,13 @@ class Channel(BaseModel):
 
     @model_validator(mode="after")
     def check_supports_broken_label_artifact_discovery(self) -> Self:
-        if self.supports_broken_label and self.artifact_discovery != ArtifactDiscoveryChoice.ANACONDA_API:
-            raise ValueError("supports_broken_label is only supported for Anaconda API artifact discovery.")
+        if (
+            self.supports_broken_label
+            and self.artifact_discovery != ArtifactDiscoveryChoice.ANACONDA_API
+        ):
+            raise ValueError(
+                "supports_broken_label is only supported for Anaconda API artifact discovery."
+            )
         return self
 
     dashboards: list[str] = []
@@ -281,7 +308,6 @@ class Channel(BaseModel):
 
         return self
 
-
     @property
     def rss_url(self) -> str:
         return f"{self.url}/rss.xml"
@@ -296,7 +322,9 @@ class Channel(BaseModel):
     def get_zstd_repodata_url(self, arch_subdir: str) -> str:
         return self.get_repodata_url(arch_subdir) + ".zst"
 
-    def get_artifact_download_url(self, arch_subdir: str, package_name: str, version: str, build_string: str, extension: str) -> str:
+    def get_artifact_download_url(
+        self, arch_subdir: str, package_name: str, version: str, build_string: str, extension: str
+    ) -> str:
         return f"{self.url}/{arch_subdir}/{package_name}-{version}-{build_string}.{extension}"
 
     model_config = ConfigDict(extra="forbid", use_attribute_docstrings=True)
@@ -306,7 +334,7 @@ class Dashboard(BaseModel):
     url_pattern: str
     """
     The URL pattern of the dashboard. The URL pattern can contain the following placeholders within curly {} braces:
-    
+
     - `channel`: The channel name. If the channel name contains a slash, only the second part is used.
     - `name`: The name of the package.
     - `version`: The version of the package.
@@ -333,7 +361,6 @@ class Dashboard(BaseModel):
         return url_pattern
 
     model_config = ConfigDict(extra="forbid", use_attribute_docstrings=True)
-
 
 
 class AppConfig(BaseSettings):
@@ -372,7 +399,9 @@ class AppConfig(BaseSettings):
                     raise ValueError(f"Dashboard {dashboard_name} is not defined.")
         return self
 
-    model_config = SettingsConfigDict(toml_file="app_config.toml", extra="forbid", use_attribute_docstrings=True)
+    model_config = SettingsConfigDict(
+        toml_file="app_config.toml", extra="forbid", use_attribute_docstrings=True
+    )
 
     @classmethod
     def settings_customise_sources(
@@ -389,7 +418,8 @@ class AppConfig(BaseSettings):
 def export_json_schema() -> None:
     with open("app_config.schema.json", "w") as f:
         json.dump(AppConfig.model_json_schema(), f, indent=2)
+        f.write("\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     export_json_schema()

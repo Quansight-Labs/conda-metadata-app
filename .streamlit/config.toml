@@ -3,4 +3,3 @@ gatherUsageStats = false
 
 [logger]
 level = "debug"
-

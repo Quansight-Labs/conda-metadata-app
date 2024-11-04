@@ -1,23 +1,38 @@
+"""
+The main page is the home of the application.
+
+With no inputs selected in the sidebar, it will list the latest uploads to the channel
+(if available). If the user selects an artifact via the sidebar, it will list its metadata.
+The metadata can also be listed directly if accessed via a `?q=` URL.
+"""
+
 import json
 import os
 import re
 import typing
-from typing import Any
-from collections.abc import Iterable
 from contextlib import closing
 from datetime import datetime
 from difflib import unified_diff
 from inspect import cleandoc
 from io import StringIO
 from tempfile import gettempdir
+from typing import Any
 
 import zstandard as zstd
 from conda_forge_metadata.types import ArtifactData
 from rattler.platform import PlatformLiteral
 from requests.auth import HTTPBasicAuth
 
-from conda_metadata_app.app_config import (AppConfig, Channel, PackageDiscoveryChoice, ArchSubdirDiscoveryChoice,
-                                           ArchSubdirList, ArtifactDiscoveryChoice, MetadataRetrieval, Secret)
+from conda_metadata_app.app_config import (
+    AppConfig,
+    ArchSubdirDiscoveryChoice,
+    ArchSubdirList,
+    ArtifactDiscoveryChoice,
+    Channel,
+    MetadataRetrieval,
+    PackageDiscoveryChoice,
+    Secret,
+)
 from conda_metadata_app.version_order import VersionOrder
 
 if not os.environ.get("CACHE_DIR"):
@@ -27,6 +42,8 @@ if not os.environ.get("CACHE_DIR"):
         gettempdir(), "conda-oci-mirror-cache"
     )
 
+from xml.etree import ElementTree as ET
+
 import requests
 import streamlit as st
 from conda_forge_metadata.artifact_info.info_json import get_artifact_info_as_json
@@ -35,8 +52,9 @@ from conda_package_streaming.package_streaming import stream_conda_component
 from conda_package_streaming.url import conda_reader_for_url
 from ruamel.yaml import YAML
 from streamlit.logger import get_logger
-from xml.etree import ElementTree as ET
 
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
 
 yaml = YAML(typ="safe")
 yaml.allow_duplicate_keys = True
@@ -47,6 +65,7 @@ st.set_page_config(
     page_icon="📦",
     initial_sidebar_state="expanded",
 )
+
 
 def bar_esc(s: str) -> str:
     "Escape vertical bars in tables"
@@ -93,7 +112,6 @@ def _make_http_session(channel_name: str) -> requests.Session:
     return session
 
 
-
 @st.cache_resource(ttl="15m", max_entries=5)
 def rss_data(channel_name: str) -> ET.ElementTree | None:
     """
@@ -134,6 +152,7 @@ def _download_compressed_repodata(channel_name: str, arch_subdir: str) -> dict |
         with dctx.stream_reader(r.raw) as reader:
             return json.load(reader)
 
+
 @st.cache_resource(ttl="15m", max_entries=50)
 def get_repodata(channel_name: str, arch_subdir: str) -> dict:
     """
@@ -156,7 +175,9 @@ def get_repodata(channel_name: str, arch_subdir: str) -> dict:
     return r.json()
 
 
-def get_all_packages_sections_from_repodata(channel_name: str, arch_subdir: str, with_broken: bool) -> dict:
+def get_all_packages_sections_from_repodata(
+    channel_name: str, arch_subdir: str, with_broken: bool
+) -> dict:
     """
     Contains the "packages" and "packages.conda" sections of the repodata.
 
@@ -242,10 +263,7 @@ def provenance_urls(package_name: str, channel: str, data: dict | None = None) -
     else:
         feedstock_names = [package_name]
 
-    return [
-        url_pattern.format(feedstock=feedstock_name)
-        for feedstock_name in feedstock_names
-    ]
+    return [url_pattern.format(feedstock=feedstock_name) for feedstock_name in feedstock_names]
 
 
 def get_package_names(channel_name: str) -> list[str]:
@@ -263,7 +281,10 @@ def get_package_names(channel_name: str) -> list[str]:
 
         for subdir in all_subdirs:
             all_packages.update(
-                pkg["name"] for pkg in get_all_packages_sections_from_repodata(channel_name, subdir, with_broken=True).values()
+                pkg["name"]
+                for pkg in get_all_packages_sections_from_repodata(
+                    channel_name, subdir, with_broken=True
+                ).values()
             )
     else:
         raise RuntimeError("Invalid package discovery choice. This is an implementation error.")
@@ -294,7 +315,6 @@ def _discover_arch_subdirs_exhaustively(channel_name: str) -> list[str]:
     return all_subdirs
 
 
-
 def get_all_arch_subdirs(channel_name: str) -> list[str]:
     """
     Get all arch subdirs (e.g., noarch, osx-64, linux-64) of a channel.
@@ -311,11 +331,14 @@ def get_all_arch_subdirs(channel_name: str) -> list[str]:
     if isinstance(discovery_choice, ArchSubdirList):
         return discovery_choice.subdirs
 
-    raise RuntimeError(f"Invalid arch subdir discovery choice: {discovery_choice} This is an implementation error.")
+    raise RuntimeError(
+        f"Invalid arch subdir discovery choice: {discovery_choice} This is an implementation error."
+    )
 
 
-
-def get_arch_subdirs_for_package(package_name: str, channel_name: str, with_broken: bool = False) -> list[str]:
+def get_arch_subdirs_for_package(
+    package_name: str, channel_name: str, with_broken: bool = False
+) -> list[str]:
     """
     Get the arch subdirs for a package.
     The arch subdirs are sorted, ascending.
@@ -329,27 +352,33 @@ def get_arch_subdirs_for_package(package_name: str, channel_name: str, with_brok
 
     if arch_subdir_discovery_choice == ArchSubdirDiscoveryChoice.CHANNELDATA:
         all_subdirs = get_channeldata(channel_name)["packages"][package_name]["subdirs"]
-    elif arch_subdir_discovery_choice == ArchSubdirDiscoveryChoice.ALL or \
-            isinstance(arch_subdir_discovery_choice, ArchSubdirList):
+    elif arch_subdir_discovery_choice == ArchSubdirDiscoveryChoice.ALL or isinstance(
+        arch_subdir_discovery_choice, ArchSubdirList
+    ):
         all_subdirs = get_all_arch_subdirs(channel_name)
     else:
-        raise RuntimeError("Invalid arch subdir discovery choice. This is an implementation error.")
+        raise RuntimeError(
+            "Invalid arch subdir discovery choice. This is an implementation error."
+        )
 
     return sorted(
-        subdir for subdir in all_subdirs
+        subdir
+        for subdir in all_subdirs
         if get_versions(channel_name, subdir, package_name, with_broken=with_broken)
     )
 
 
-
-def _best_version_in_subdir(package_name: str, channel_name: str, with_broken: bool = False) \
-        -> tuple[str, str] | tuple[None, None]:
+def _best_version_in_subdir(
+    package_name: str, channel_name: str, with_broken: bool = False
+) -> tuple[str, str] | tuple[None, None]:
     if not package_name:
         return None, None
     subdirs_plus_best_version = sorted(
         (
             (subdir, get_versions(channel_name, subdir, package_name, with_broken=with_broken)[0])
-            for subdir in get_arch_subdirs_for_package(package_name, channel_name, with_broken=with_broken)
+            for subdir in get_arch_subdirs_for_package(
+                package_name, channel_name, with_broken=with_broken
+            )
         ),
         key=lambda x: VersionOrder(x[1]),
         reverse=True,
@@ -359,7 +388,9 @@ def _best_version_in_subdir(package_name: str, channel_name: str, with_broken: b
     return None, None
 
 
-def get_versions(channel_name: str, subdir: str, package_name: str, with_broken: bool = False) -> list[str]:
+def get_versions(
+    channel_name: str, subdir: str, package_name: str, with_broken: bool = False
+) -> list[str]:
     """
     Get the versions of a package in a channel and subdir.
     If package_name or subdir are empty, return an empty list.
@@ -386,11 +417,11 @@ def get_versions(channel_name: str, subdir: str, package_name: str, with_broken:
             and (with_broken or "broken" not in pkg["labels"])
         }
     elif discovery_choice == ArtifactDiscoveryChoice.REPODATA:
-        repodata_pkg = get_all_packages_sections_from_repodata(channel_name, subdir, with_broken=with_broken)
+        repodata_pkg = get_all_packages_sections_from_repodata(
+            channel_name, subdir, with_broken=with_broken
+        )
         all_versions = {
-            pkg["version"]
-            for pkg in repodata_pkg.values()
-            if pkg["name"] == package_name
+            pkg["version"] for pkg in repodata_pkg.values() if pkg["name"] == package_name
         }
     else:
         raise RuntimeError("Invalid artifact discovery choice. This is an implementation error.")
@@ -402,8 +433,9 @@ def get_versions(channel_name: str, subdir: str, package_name: str, with_broken:
     )
 
 
-def _build_mapping_from_anaconda_api(package_name: str, subdir: str, version: str, channel: str,
-                                     with_broken: bool = False) -> dict[str, int]:
+def _build_mapping_from_anaconda_api(
+    package_name: str, subdir: str, version: str, channel: str, with_broken: bool = False
+) -> dict[str, int]:
     """
     Returns a mapping from build string to build number.
     """
@@ -412,13 +444,15 @@ def _build_mapping_from_anaconda_api(package_name: str, subdir: str, version: st
         pkg["attrs"]["build"]: pkg["attrs"]["build_number"]
         for pkg in data
         if pkg["attrs"]["subdir"] == subdir
-           and pkg["version"] == version
-           and "main" in pkg["labels"]
-           and (with_broken or "broken" not in pkg["labels"])
+        and pkg["version"] == version
+        and "main" in pkg["labels"]
+        and (with_broken or "broken" not in pkg["labels"])
     }
 
 
-def _build_mapping_from_repodata(package_name: str, subdir: str, version: str, channel: str, with_broken: bool) -> dict[str, int]:
+def _build_mapping_from_repodata(
+    package_name: str, subdir: str, version: str, channel: str, with_broken: bool
+) -> dict[str, int]:
     """
     Note: This function cannot consider labels as they are not present in the repodata.
     Returns a mapping from build string to build number.
@@ -428,12 +462,13 @@ def _build_mapping_from_repodata(package_name: str, subdir: str, version: str, c
     return {
         pkg["build"]: pkg["build_number"]
         for pkg in repodata_packages.values()
-        if pkg["name"] == package_name
-           and pkg["version"] == version
+        if pkg["name"] == package_name and pkg["version"] == version
     }
 
 
-def builds(package_name: str, subdir: str, version: str, channel: str, with_broken: bool = False) -> list[str]:
+def builds(
+    package_name: str, subdir: str, version: str, channel: str, with_broken: bool = False
+) -> list[str]:
     if not package_name or not subdir or not version:
         return []
 
@@ -441,48 +476,61 @@ def builds(package_name: str, subdir: str, version: str, channel: str, with_brok
     discovery_choice = get_channel_config(channel).artifact_discovery
 
     if discovery_choice == ArtifactDiscoveryChoice.ANACONDA_API:
-        build_str_to_num = _build_mapping_from_anaconda_api(package_name, subdir, version, channel, with_broken)
+        build_str_to_num = _build_mapping_from_anaconda_api(
+            package_name, subdir, version, channel, with_broken
+        )
     elif discovery_choice == ArtifactDiscoveryChoice.REPODATA:
-        build_str_to_num = _build_mapping_from_repodata(package_name, subdir, version, channel, with_broken)
+        build_str_to_num = _build_mapping_from_repodata(
+            package_name, subdir, version, channel, with_broken
+        )
     else:
         raise RuntimeError("Invalid artifact discovery choice. This is an implementation error.")
 
     return [
-        k
-        for k, _ in sorted(
-            build_str_to_num.items(), key=lambda kv: (kv[1], kv[0]), reverse=True
-        )
+        k for k, _ in sorted(build_str_to_num.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
     ]
 
 
-def _extensions_from_anaconda_api(package_name: str, subdir: str, version: str, build: str, channel: str,
-                                  with_broken: bool = False) -> set[str]:
+def _extensions_from_anaconda_api(
+    package_name: str,
+    subdir: str,
+    version: str,
+    build: str,
+    channel: str,
+    with_broken: bool = False,
+) -> set[str]:
     data = anaconda_api_data(package_name, channel)
     return {
         ("conda" if pkg["basename"].endswith(".conda") else "tar.bz2")
         for pkg in data
         if pkg["attrs"]["subdir"] == subdir
-           and pkg["version"] == version
-           and pkg["attrs"]["build"] == build
-           and "main" in pkg["labels"]
-           and (with_broken or "broken" not in pkg["labels"])
+        and pkg["version"] == version
+        and pkg["attrs"]["build"] == build
+        and "main" in pkg["labels"]
+        and (with_broken or "broken" not in pkg["labels"])
     }
 
 
-def _extensions_from_repodata(package_name: str, subdir: str, version: str, build: str, channel: str, with_broken: bool) -> set[str]:
+def _extensions_from_repodata(
+    package_name: str, subdir: str, version: str, build: str, channel: str, with_broken: bool
+) -> set[str]:
     repodata_packages = get_all_packages_sections_from_repodata(channel, subdir, with_broken)
 
     return {
         ("conda" if filename.endswith(".conda") else "tar.bz2")
         for filename, pkg in repodata_packages.items()
-        if pkg["name"] == package_name
-           and pkg["version"] == version
-           and pkg["build"] == build
+        if pkg["name"] == package_name and pkg["version"] == version and pkg["build"] == build
     }
 
 
-def extensions(package_name: str, subdir: str, version: str, build: str, channel: str,
-               with_broken: bool = False) -> list[str]:
+def extensions(
+    package_name: str,
+    subdir: str,
+    version: str,
+    build: str,
+    channel: str,
+    with_broken: bool = False,
+) -> list[str]:
     if not package_name or not subdir or not version or not build:
         return []
     if override_extensions := get_channel_config(channel).override_extensions:
@@ -491,13 +539,21 @@ def extensions(package_name: str, subdir: str, version: str, build: str, channel
     discovery_choice = get_channel_config(channel).artifact_discovery
 
     if discovery_choice == ArtifactDiscoveryChoice.ANACONDA_API:
-        return sorted(_extensions_from_anaconda_api(package_name, subdir, version, build, channel, with_broken))
+        return sorted(
+            _extensions_from_anaconda_api(
+                package_name, subdir, version, build, channel, with_broken
+            )
+        )
     if discovery_choice == ArtifactDiscoveryChoice.REPODATA:
-        return sorted(_extensions_from_repodata(package_name, subdir, version, build, channel, with_broken))
+        return sorted(
+            _extensions_from_repodata(package_name, subdir, version, build, channel, with_broken)
+        )
     raise RuntimeError("Invalid artifact discovery choice. This is an implementation error.")
 
 
-def _is_broken_anaconda_api(package_name: str, subdir: str, version: str, build: str, extension: str, channel: str) -> bool:
+def _is_broken_anaconda_api(
+    package_name: str, subdir: str, version: str, build: str, extension: str, channel: str
+) -> bool:
     channel_config = get_channel_config(channel)
     if not channel_config.supports_broken_label:
         return False
@@ -505,16 +561,18 @@ def _is_broken_anaconda_api(package_name: str, subdir: str, version: str, build:
     data = anaconda_api_data(package_name, channel)
     for pkg in data:
         if (
-                pkg["attrs"]["subdir"] == subdir
-                and pkg["version"] == version
-                and pkg["attrs"]["build"] == build
-                and pkg["basename"].endswith(extension)
+            pkg["attrs"]["subdir"] == subdir
+            and pkg["version"] == version
+            and pkg["attrs"]["build"] == build
+            and pkg["basename"].endswith(extension)
         ):
             return "broken" in pkg["labels"]
     return False
 
 
-def _is_broken_repodata(package_name: str, subdir: str, version: str, build: str, extension: str, channel: str) -> bool:
+def _is_broken_repodata(
+    package_name: str, subdir: str, version: str, build: str, extension: str, channel: str
+) -> bool:
     repodata = get_repodata(channel, subdir)
 
     artifact_name = f"{package_name}-{version}-{build}.{extension}"
@@ -522,14 +580,15 @@ def _is_broken_repodata(package_name: str, subdir: str, version: str, build: str
     return artifact_name in repodata.get("removed", [])
 
 
-def _is_broken(package_name: str, subdir: str, version: str, build: str, extension: str, channel: str) -> bool:
+def _is_broken(
+    package_name: str, subdir: str, version: str, build: str, extension: str, channel: str
+) -> bool:
     channel_config = get_channel_config(channel)
     if channel_config.artifact_discovery == ArtifactDiscoveryChoice.ANACONDA_API:
         return _is_broken_anaconda_api(package_name, subdir, version, build, extension, channel)
     if channel_config.artifact_discovery == ArtifactDiscoveryChoice.REPODATA:
         return _is_broken_repodata(package_name, subdir, version, build, extension, channel)
     raise RuntimeError("Invalid artifact discovery choice. This is an implementation error.")
-
 
 
 def patched_repodata(channel: str, subdir: str, artifact: str) -> tuple[dict, bool]:
@@ -571,7 +630,7 @@ def artifact_metadata(channel: str, subdir: str, artifact: str) -> ArtifactData 
         artifact=artifact,
         backend="streamed",
         skip_files_suffixes=(),
-        session=authenticated_session
+        session=authenticated_session,
     )
 
 
@@ -628,10 +687,10 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
                 if artifact:
                     if artifact.endswith(".conda"):
                         extension = "conda"
-                        rest_of_artifact = artifact[:-len(".conda")]
+                        rest_of_artifact = artifact[: -len(".conda")]
                     elif artifact.endswith(".tar.bz2"):
                         extension = "tar.bz2"
-                        rest_of_artifact = artifact[:-len(".tar.bz2")]
+                        rest_of_artifact = artifact[: -len(".tar.bz2")]
                     elif artifact.endswith("."):
                         extension = None
                         rest_of_artifact = artifact.rstrip(".")
@@ -658,7 +717,7 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
         "build": build,
         "extension": extension,
         "path": path,
-        "with_broken": with_broken
+        "with_broken": with_broken,
     }, ok
 
 
@@ -701,8 +760,9 @@ _patched_metadata_channels = [
     for channel in app_config().channels
     if get_channel_config(channel).repodata_patches_package
 ]
-_with_patches_help_extra = f" Only for {_patched_metadata_channels[0]}." \
-    if len(_patched_metadata_channels) == 1 else ""
+_with_patches_help_extra = (
+    f" Only for {_patched_metadata_channels[0]}." if len(_patched_metadata_channels) == 1 else ""
+)
 _with_patches_help: str
 if _patched_metadata_channels:
     _with_patches_help = "Requires extra API calls. Slow!" + _with_patches_help_extra
@@ -741,18 +801,24 @@ with st.sidebar:
         _all_channels,
         key="channel",
         # Use the user provided channel (via query params) if possible.
-        index=_all_channels.index(url_params["channel"]) if url_params["channel"] in _all_channels else 0,
+        index=_all_channels.index(url_params["channel"])
+        if url_params["channel"] in _all_channels
+        else 0,
     )
 
-    _available_package_names = [""] + get_package_names(channel)    # empty string means: show RSS feed
+    _available_package_names = [""] + get_package_names(
+        channel
+    )  # empty string means: show RSS feed
     package_name = st.selectbox(
         "Enter a package name:",
         options=_available_package_names,
         key="package_name",
         help=f"Choose one package out of the {len(_available_package_names) - 1:,} available ones. "
-        "Underscore-leading names are sorted last."
+        "Underscore-leading names are sorted last.",
     )
-    _available_subdirs = get_arch_subdirs_for_package(package_name, channel, with_broken=with_broken)
+    _available_subdirs = get_arch_subdirs_for_package(
+        package_name, channel, with_broken=with_broken
+    )
     _best_subdir, _best_version = _best_version_in_subdir(
         package_name, channel, with_broken=with_broken
     )
@@ -823,9 +889,7 @@ def input_value_so_far():
 
 
 def disable_button(query):
-    if re.match(
-        r"^[a-z0-9-]+/[a-z0-9-]+::[a-z0-9-]+-[0-9.]+-[a-z0-9_]+.[a-z0-9]+$", query
-    ):
+    if re.match(r"^[a-z0-9-]+/[a-z0-9-]+::[a-z0-9-]+-[0-9.]+-[a-z0-9_]+.[a-z0-9]+$", query):
         return False
     if all([channel, subdir, package_name, version, build, extension]):
         return False
@@ -835,13 +899,13 @@ def disable_button(query):
 c1, c2 = st.columns([1, 0.15])
 with c1:
     query = st.text_input(
-            label="Search artifact metadata:",
-            placeholder="channel/subdir::package_name-version-build.ext",
-            value=input_value_so_far(),
-            label_visibility="collapsed",
-            key="query_input",
-            disabled=True,
-        )
+        label="Search artifact metadata:",
+        placeholder="channel/subdir::package_name-version-build.ext",
+        value=input_value_so_far(),
+        label_visibility="collapsed",
+        key="query_input",
+        disabled=True,
+    )
 with c2:
     submitted = st.button(
         "Submit",
@@ -864,8 +928,12 @@ if submitted or all([channel, subdir, package_name, version, build]):
             subdir=subdir,
             artifact=artifact,
         )
-        if not data and artifact.endswith(".tar.bz2") and get_channel_config(channel).metadata_retrieval == MetadataRetrieval.STREAMED:
-            st.warning(f"Cannot retrieve metadata of an tar.bz2 artifact for non-OCI channels.")
+        if (
+            not data
+            and artifact.endswith(".tar.bz2")
+            and get_channel_config(channel).metadata_retrieval == MetadataRetrieval.STREAMED
+        ):
+            st.warning("Cannot retrieve metadata of an tar.bz2 artifact for non-OCI channels.")
             st.stop()
         elif not data:
             logger.error(f"No metadata found for `{query}`.")
@@ -903,8 +971,8 @@ if isinstance(data, dict):
             else:
                 name = url_text = url.split("/")[-1]
             if (
-                show_archived 
-                and channel == "conda-forge" 
+                show_archived
+                and channel == "conda-forge"
                 and is_archived_repo(f"conda-forge/{name}")
             ):
                 url_text = f"~~{url_text}~~"
@@ -915,7 +983,9 @@ if isinstance(data, dict):
         logger.error(exc, exc_info=True)
 
     with_patches_requested = with_patches and get_channel_config(channel).repodata_patches_package
-    patches_supported = get_channel_config(channel).artifact_discovery == ArtifactDiscoveryChoice.ANACONDA_API
+    patches_supported = (
+        get_channel_config(channel).artifact_discovery == ArtifactDiscoveryChoice.ANACONDA_API
+    )
 
     if with_patches_requested and not patches_supported:
         st.error(
@@ -931,38 +1001,39 @@ if isinstance(data, dict):
 
     st.markdown(f'## {"❌ " if yanked else ""}{data["name"]} {data["version"]}')
     if yanked:
-        st.error(
-            "This artifact has been removed from the index and is only available via URL."
-        )
+        st.error("This artifact has been removed from the index and is only available via URL.")
     about = data.get("about") or data.get("rendered_recipe", {}).get("about", {})
 
     dashboard_urls = {
-        dashboard_name: app_config().dashboards[dashboard_name].url_pattern.format(
-            channel=channel.split('/', 1)[-1], subdir=subdir, name=data["name"], version=data["version"]
+        dashboard_name: app_config()
+        .dashboards[dashboard_name]
+        .url_pattern.format(
+            channel=channel.split("/", 1)[-1],
+            subdir=subdir,
+            name=data["name"],
+            version=data["version"],
         )
         for dashboard_name in get_channel_config(channel).dashboards
     }
-    dashboard_markdown_links = [
-        f"[{name}]({url})" for name, url in dashboard_urls.items()
-    ]
-    dashboard_markdown_links = " · ".join(dashboard_markdown_links) if dashboard_markdown_links else "-"
+    dashboard_markdown_links = [f"[{name}]({url})" for name, url in dashboard_urls.items()]
+    dashboard_markdown_links = (
+        " · ".join(dashboard_markdown_links) if dashboard_markdown_links else "-"
+    )
     build_str = data.get("index", {}).get("build", "*N/A*")
     if build_str == "*N/A*":
         download = "*N/A*"
     else:
         _download_url = get_channel_config(channel).get_artifact_download_url(
             arch_subdir=subdir,
-            package_name=data['name'],
-            version=data['version'],
+            package_name=data["name"],
+            version=data["version"],
             build_string=build_str,
-            extension=extension
+            extension=extension,
         )
         download = f"[artifact download]({_download_url})"
     maintainers = []
     for user in (
-        data.get("rendered_recipe", {})
-        .get("extra", {})
-        .get("recipe-maintainers", ["*N/A*"])
+        data.get("rendered_recipe", {}).get("extra", {}).get("recipe-maintainers", ["*N/A*"])
     ):
         if user == "*N/A*":
             maintainers.append(user)
@@ -1056,7 +1127,9 @@ elif data == "show_latest":
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
         table.append(f"| {n} | [{name}]({more_url})| {version} | {platforms} | {published}")
-    st.markdown(f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})")
+    st.markdown(
+        f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
+    )
     st.markdown(f"> Last update: {rss_ret.find('channel/pubDate').text}.")
     st.markdown("\n".join(table))
 elif isinstance(data, str) and data.startswith("error:"):
