@@ -1,5 +1,5 @@
 {
-  "name": "conda-metadata-app (pixi, recommended)",
+  "name": "conda-metadata-app (pixi)",
   "build": {
     "dockerfile": "Dockerfile",
     "context": "../.."
