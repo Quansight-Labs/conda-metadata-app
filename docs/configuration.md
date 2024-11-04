@@ -20,11 +20,7 @@ If enabled, the file path search looks like this:
 ![File Path Search](assets/filepath_search_enabled_dark.png#gh-dark-mode-only)
 ![File Path Search](assets/filepath_search_enabled_light.png#gh-light-mode-only)
 
-Due to limitations of Streamlit, disabling this feature will not remove the search bar from the sidebar.
-Instead, it will show a message that the feature is disabled:
-
-![File Path Search Disabled](assets/filepath_search_disabled_dark.png#gh-dark-mode-only)
-![File Path Search Disabled](assets/filepath_search_disabled_light.png#gh-light-mode-only)
+Disabling the file path search feature will remove it from the sidebar.
 
 ## Configuring Channels
 
