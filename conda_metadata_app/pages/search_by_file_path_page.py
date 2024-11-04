@@ -5,7 +5,7 @@ import requests
 import streamlit as st
 from streamlit_searchbox import st_searchbox
 
-from app import app_config
+from conda_metadata_app.app_config import AppConfig
 
 
 @st.cache_resource(ttl="15m", max_entries=100)
@@ -48,10 +48,6 @@ st.set_page_config(
     page_icon="📦",
     initial_sidebar_state="collapsed",
 )
-
-if not app_config().enable_filepath_search:
-    st.error("File path search is disabled in the app configuration.")
-    st.stop()
 
 c1, c2 = st.columns([1, 0.25])
 with c1:
