@@ -1,11 +1,17 @@
+"""
+This optional page connects to a Datassette instance to list artifacts
+that contain a certain file path.
+
+The code and data for the Datassette instance can be found at
+https://github.com/Quansight-Labs/conda-forge-paths.
+"""
+
 import time
 from inspect import cleandoc
 
 import requests
 import streamlit as st
 from streamlit_searchbox import st_searchbox
-
-from conda_metadata_app.app_config import AppConfig
 
 
 @st.cache_resource(ttl="15m", max_entries=100)

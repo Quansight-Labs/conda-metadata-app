@@ -1,14 +1,14 @@
-from pathlib import Path
-
-import streamlit as st
-
-from conda_metadata_app.app_config import AppConfig
-
 """
 If deploying a streamlit app as a Python module, we cannot use
 the automatic pages/ subpages. Instead, we need to define the
 pages manually.
 """
+
+from pathlib import Path
+
+import streamlit as st
+
+from conda_metadata_app.app_config import AppConfig
 
 pages_dir = Path(__file__).parent / "pages"
 

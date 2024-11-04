@@ -1,6 +1,6 @@
 # Configure `app_config.toml`
 
-The `app_config.toml` is a configuration file that is used to setup the `conda-metadata-app` which allows you to browse metadata of conda packages. 
+The `app_config.toml` is a configuration file that is used to setup the `conda-metadata-app` which allows you to browse metadata of conda packages.
 
 ## Global Configuration
 ### File Path Search
@@ -110,7 +110,7 @@ arch_subdir_discovery = { subdirs = ["linux-64", "osx-64", "win-64"] }
 Recommended to use `channeldata` if available, as it is more efficient.
 
 #### Repodata Patches
-  
+
 `repodata_patches_package`: Specifies a package that includes patches for "repodata".
 It is expected to be available in the channel.
 ```toml
@@ -213,7 +213,7 @@ anaconda = { url_pattern = "https://anaconda.org/{channel}/{name}/files?version=
 ghcr = { url_pattern = "https://github.com/orgs/channel-mirrors/packages/container/package/{channel}%2F{subdir}%2F{name}" }
 prefix = { url_pattern = "https://prefix.dev/channels/{channel}/packages/{name}" }
 ```
-The `url_pattern` can contain placeholders that are encompassed in curly braces `{}`. These placeholders get replaced with the relevant value when generating the URLs. Current available placeholders include `{channel}`, `{name}`, `{version}`, and `{subdir}`. 
+The `url_pattern` can contain placeholders that are encompassed in curly braces `{}`. These placeholders get replaced with the relevant value when generating the URLs. Current available placeholders include `{channel}`, `{name}`, `{version}`, and `{subdir}`.
 
 Note that the `app_config.toml` file is loaded by the application at runtime. Therefore, any changes made while the app is running will take effect only after you restart the application. Ensure to follow the correct syntax to avoid runtime errors.
 

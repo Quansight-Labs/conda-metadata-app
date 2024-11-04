@@ -8,6 +8,7 @@ Object inheritance:
    :top-classes: conda.models.version.BaseSpec
    :parts: 1
 """
+
 from __future__ import annotations
 
 import re
@@ -200,9 +201,7 @@ class VersionOrder(metaclass=SingleStrArgCachingType):
         # This is an error because specifying only a local version is invalid.
         # version[0] is empty because vstr.split("+") returns something like ['', '1.2']
         if version[0] == "":
-            raise InvalidVersionSpec(
-                vstr, "Missing version before local version separator '+'"
-            )
+            raise InvalidVersionSpec(vstr, "Missing version before local version separator '+'")
 
         if version[0][-1] == "_":
             # If the last character of version is "-" or "_", don't split that out
@@ -252,9 +251,7 @@ class VersionOrder(metaclass=SingleStrArgCachingType):
         return True
 
     def __eq__(self, other):
-        return self._eq(self.version, other.version) and self._eq(
-            self.local, other.local
-        )
+        return self._eq(self.version, other.version) and self._eq(self.local, other.local)
 
     def startswith(self, other):
         # Tests if the version lists match up to the last element in "other".
