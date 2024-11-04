@@ -418,6 +418,7 @@ class AppConfig(BaseSettings):
 def export_json_schema() -> None:
     with open("app_config.schema.json", "w") as f:
         json.dump(AppConfig.model_json_schema(), f, indent=2)
+        f.write("\n")
 
 
 if __name__ == "__main__":
