@@ -1,5 +1,5 @@
 {
-  "name": "Python 3",
+  "name": "conda-metadata-app (Streamlit Cloud)",
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bullseye",
   "customizations": {
@@ -13,7 +13,8 @@
       "settings": {},
       "extensions": [
         "ms-python.python",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "GitHub.copilot"
       ]
     }
   },

@@ -1,0 +1,33 @@
+{
+  "name": "conda-metadata-app (pixi)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "../.."
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "GitHub.copilot"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-pixi,target=${containerWorkspaceFolder}/.pixi,type=volume"
+  ],
+  "postCreateCommand": "sudo chown vscode .pixi && pixi install",
+  "portsAttributes": {
+    "8501": {
+      "label": "Application",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "forwardPorts": [
+    8501
+  ]
+}
