@@ -12,6 +12,8 @@ deploy = "streamlit run --server.headless=true --global.developmentMode=false ap
 schema = "python -m conda_metadata_app.app_config"
 postinstall-production = "pip install --no-deps --disable-pip-version-check dist/conda_metadata_app-*.whl"
 
+
+# please sync the dependencies with pyproject.toml
 [dependencies]
 python = "3.12.*"
 pydantic-settings = ">=2.4.0,<3"
@@ -22,6 +24,7 @@ py-rattler = ">=0.7.0,<0.8"
 conda-forge-metadata = ">=0.11.0,<0.12"
 conda-oci-mirror = ">=0.1.0,<0.2"
 streamlit = ">=1.38.0,<2"
+streamlit-searchbox = "==0.1.19"
 setuptools = "*"    # can be removed after conda-oci-mirror gets rid of it, https://github.com/channel-mirrors/conda-oci-mirror/pull/40
 
 [host-dependencies]
@@ -36,9 +39,6 @@ build-wheel = "python -m build --no-isolation --wheel ."
 
 [feature.dev.dependencies]
 pixi-pycharm = ">=0.0.6,<0.0.7"
-
-[pypi-dependencies]
-streamlit-searchbox = "==0.1.16"
 
 [environments]
 default = []    # includes default feature
