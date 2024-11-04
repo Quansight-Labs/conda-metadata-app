@@ -49,10 +49,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-if not AppConfig().enable_filepath_search:
-    st.error("File path search is disabled in the app configuration.")
-    st.stop()
-
 c1, c2 = st.columns([1, 0.25])
 with c1:
     path_to_search = st_searchbox(
