@@ -15,7 +15,9 @@ pages_dir = Path(__file__).parent / "pages"
 pages = [
     st.Page(
         pages_dir / "main_page.py",
-        title="app",
+        title="conda metadata browser",
+        icon="📦",
+        default=True,
     )
 ]
 
@@ -23,7 +25,9 @@ if AppConfig().enable_filepath_search:
     pages.append(
         st.Page(
             pages_dir / "search_by_file_path_page.py",
-            title="Search By File Path",
+            title="Search by file path",
+            icon="🔎",
+            url_path="Search_by_file_path",
         )
     )
 

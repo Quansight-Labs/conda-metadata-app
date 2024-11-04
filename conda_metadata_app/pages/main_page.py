@@ -769,10 +769,6 @@ if _patched_metadata_channels:
 
 
 with st.sidebar:
-    st.title(
-        "conda metadata browser",
-        help="Web UI to browse the metadata of conda packages.",
-    )
     with_broken = st.checkbox(
         "Include artifacts marked broken",
         value=False,
