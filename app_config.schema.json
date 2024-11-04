@@ -136,16 +136,16 @@
               "items": {
                 "anyOf": [
                   {
-                    "const": ".conda",
+                    "const": "conda",
                     "enum": [
-                      ".conda"
+                      "conda"
                     ],
                     "type": "string"
                   },
                   {
-                    "const": ".tar.bz2",
+                    "const": "tar.bz2",
                     "enum": [
-                      ".tar.bz2"
+                      "tar.bz2"
                     ],
                     "type": "string"
                   }

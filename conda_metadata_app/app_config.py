@@ -234,7 +234,7 @@ class Channel(BaseModel):
     How to retrieve metadata for a package.
     """
 
-    override_extensions: list[Literal[".conda"] | Literal[".tar.bz2"]] | None = None
+    override_extensions: list[Literal["conda"] | Literal["tar.bz2"]] | None = None
     """
     Set this to a list of conda package extensions to override the auto detection of extensions.
     """
