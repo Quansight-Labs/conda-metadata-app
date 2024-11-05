@@ -208,7 +208,7 @@ def get_all_packages_sections_from_repodata(
     return sections
 
 
-@st.cache_resource(ttl="15m", max_entries=1000)
+@st.cache_resource(ttl="15m", max_entries=100)
 def anaconda_api_data(package_name: str, channel_name: str) -> dict:
     if channel_name.startswith("pkgs/"):
         channel_name = channel_name.split("/", 1)[1]
@@ -235,7 +235,7 @@ def repodata_patches(channel_name: str) -> dict[str, Any]:
     return patches
 
 
-@st.cache_resource(ttl="1d", max_entries=1000)
+@st.cache_resource(ttl="12h", max_entries=100)
 def provenance_urls(package_name: str, channel: str, data: dict | None = None) -> list[str]:
     if not package_name or not data:
         return [""]
@@ -296,7 +296,7 @@ def get_package_names(channel_name: str) -> list[str]:
     )
 
 
-@st.cache_resource(ttl="12h", max_entries=1000)
+@st.cache_resource(ttl="12h", max_entries=100)
 def _discover_arch_subdirs_exhaustively(channel_name: str) -> list[str]:
     """
     Call this function for ArchSubdirDiscoveryChoice.ALL.
