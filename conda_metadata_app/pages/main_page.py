@@ -191,7 +191,7 @@ def get_all_packages_sections_from_repodata(
             sections.update(repodata[key])
 
     if with_broken:
-        for removed_artifact in get_repodata(channel, arch_subdir).get("removed", []):
+        for removed_artifact in get_repodata(channel_name, arch_subdir).get("removed", []):
             removed_artifact: str
 
             if removed_artifact.endswith(".tar.bz2"):
