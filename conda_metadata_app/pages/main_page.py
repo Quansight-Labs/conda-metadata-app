@@ -7,9 +7,11 @@ The metadata can also be listed directly if accessed via a `?q=` URL.
 """
 
 import json
+import mimetypes
 import os
 import re
 import typing
+from collections import defaultdict
 from contextlib import closing
 from datetime import datetime
 from difflib import unified_diff
@@ -65,6 +67,56 @@ st.set_page_config(
     page_icon="📦",
     initial_sidebar_state="expanded",
 )
+
+EXTENSION_TO_CATEGORY = {
+    ".a": "Library",
+    ".bat": "Shell",
+    ".cmd": "Shell",
+    ".csh": "Shell",
+    ".dll": "Library",
+    ".dylib": "Library",
+    ".exe": "Executable",
+    ".fish": "Shell",
+    ".go": "Go",
+    ".h": "Headers",
+    ".hpp": "Headers",
+    ".lib": "Library",
+    ".pm": "Perl",
+    ".ps1": "Shell",
+    ".psm1": "Shell",
+    ".pyi": "Python",
+    ".pyd": "Library",
+    ".rs": "Rust",
+    ".sh": "Shell",
+    ".so": "Library",
+    ".xsh": "Shell",
+    ".zsh": "Shell",
+}
+MIMETYPE_TO_CATEGORY = {
+    None: "Other",
+    "application/java-vm": "Java",
+    "application/javascript": "JavaScript",
+    "application/json": "JSON",
+    "application/octet-stream": "Binary",
+    "application/pdf": "PDF",
+    "application/vnd.ms-fontobject": "Fonts",
+    "application/x-font-type1": "Fonts",
+    "application/x-python-code": "Python",
+    "application/x-tar": "Archives",
+    "application/x-tcl": "TCL",
+    "application/x-tgif": "Multimedia",
+    "application/xml": "XML",
+    "application/zip": "Archives",
+    "text/css": "CSS",
+    "text/csv": "CSV",
+    "text/html": "HTML",
+    "text/markdown": "Markdown",
+    "text/plain": "Text",
+    "text/x-c": "C",
+    "text/x-fortran": "Fortran",
+    "text/x-perl": "Perl",
+    "text/x-python": "Python",
+}
 
 
 def bar_esc(s: str) -> str:
@@ -591,6 +643,38 @@ def _is_broken(
     raise RuntimeError("Invalid artifact discovery choice. This is an implementation error.")
 
 
+def _categorize_path(path: str) -> str:
+    ext = os.path.splitext(path)[1].lower()
+    components = path.split("/")
+    if not ext and "bin" in components[:-1]:
+        return "Executable"
+    if category := EXTENSION_TO_CATEGORY.get(ext):
+        return category
+    mimetype, _ = mimetypes.guess_type(path)
+    if category := MIMETYPE_TO_CATEGORY.get(mimetype):
+        return category
+    first, second = mimetype.split("/")
+    if first == "font":
+        return "Fonts"
+    if first in ("image", "audio", "video"):
+        return "Multimedia"
+    if ".so." in components[-1]:
+        return "Library"
+    if not ext and "LICENSE" in components[-1]:
+        return "Text"
+    if components[0] == "man" and ext[1:].isdigit():
+        return "Text"
+    return mimetype
+
+
+def _content_analysis_plot(paths: list[str]):
+    counter = defaultdict(int)
+    for path in paths:
+        counter[_categorize_path(path)] += 1
+    counter = dict(sorted(counter.items(), key=lambda kv: kv[1], reverse=True))
+    return st.bar_chart([counter], horizontal=True, stack="normalize")
+
+
 def patched_repodata(channel: str, subdir: str, artifact: str) -> tuple[dict, bool]:
     """
     This function assumes that the artifact discovery mode for the channel is "anaconda".
@@ -1095,7 +1179,14 @@ if isinstance(data, dict):
 
     if data.get("files"):
         st.write("### Files")
-        all_files = "\n".join(data["files"])
+        _content_analysis_plot(data["files"])
+        if (n_files := len(data["files"])) > 10000:
+            st.info(
+                f"Too many files ({n_files}). Showing only first 10K. "
+                "Check raw JSON below for full list.",
+                icon="ℹ️",
+            )
+        all_files = "\n".join(data["files"][:10000])
         st.code(all_files, language="text", line_numbers=True)
 
     st.write("### Raw JSON")
