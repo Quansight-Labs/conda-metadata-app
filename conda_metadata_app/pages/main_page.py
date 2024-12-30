@@ -91,6 +91,8 @@ EXTENSION_TO_CATEGORY = {
     ".pyo": "Python",
     ".pyw": "Python",
     ".pyx": "Cython",
+    ".r": "R",
+    ".rda": "R",
     ".rdb": "R",
     ".rds": "R",
     ".rdx": "R",
