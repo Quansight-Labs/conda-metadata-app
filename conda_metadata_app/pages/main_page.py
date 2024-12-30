@@ -668,6 +668,8 @@ def _categorize_path(path: str) -> str:
 
 
 def _content_analysis_plot(paths: list[str]):
+    if not app_config().enable_filetype_plot:
+        return
     counter = defaultdict(int)
     for path in paths:
         counter[_categorize_path(path)] += 1

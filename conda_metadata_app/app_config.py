@@ -391,6 +391,12 @@ class AppConfig(BaseSettings):
     The file path search feature sends information about your query to an API provided by Quansight.
     """
 
+    enable_filetype_plot: bool = True
+    """
+    Whether to enable Altair charts to plot a basic path-based analysis of the files included in
+    each artifact.
+    """
+
     @model_validator(mode="after")
     def _validate_dashboards(self) -> Self:
         for channel in self.channels.values():
