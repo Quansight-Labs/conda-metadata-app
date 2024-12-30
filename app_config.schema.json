@@ -355,6 +355,12 @@
       "description": "Whether to enable the file path search feature.\nThe file path search feature sends information about your query to an API provided by Quansight.",
       "title": "Enable Filepath Search",
       "type": "boolean"
+    },
+    "enable_filetype_plot": {
+      "default": true,
+      "description": "Whether to enable Altair charts to plot a basic path-based analysis of the files included in\neach artifact.",
+      "title": "Enable Filetype Plot",
+      "type": "boolean"
     }
   },
   "required": [
