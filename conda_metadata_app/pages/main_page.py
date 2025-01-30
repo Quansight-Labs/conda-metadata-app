@@ -1098,7 +1098,7 @@ if isinstance(data, dict):
         patched_data = {}
         yanked = _is_broken(package_name, subdir, version, build, extension, channel)
 
-    st.markdown(f'## {"❌ " if yanked else ""}{data["name"]} {data["version"]}')
+    st.markdown(f"## {'❌ ' if yanked else ''}{data['name']} {data['version']}")
     if yanked:
         st.error("This artifact has been removed from the index and is only available via URL.")
     about = data.get("about") or data.get("rendered_recipe", {}).get("about", {})
@@ -1132,7 +1132,7 @@ if isinstance(data, dict):
         download = f"[artifact download]({_download_url})"
     maintainers = []
     if recipe := data.get("rendered_recipe", {}).get("recipe"):  # recipe.yaml
-        recipe_format = f"recipe.yaml v{recipe.get("schema_version", 1)}"
+        recipe_format = f"recipe.yaml v{recipe.get('schema_version', 1)}"
         rattler_build_version = (
             data.get("rendered_recipe").get("system_tools").get("rattler-build", "")
         )
