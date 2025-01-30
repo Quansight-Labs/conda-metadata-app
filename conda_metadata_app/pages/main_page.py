@@ -303,13 +303,19 @@ def provenance_urls(package_name: str, channel: str, data: dict | None = None) -
     if not package_name or not data:
         return [""]
     if data is not None:
-        remote_url = data.get("rendered_recipe", {}).get("extra", {}).get("remote_url")
-        if remote_url:
+        if extra := data.get("rendered_recipe", {}).get("extra", {}):  # meta.yaml
+            pass
+        elif extra := data.get("about", {}).get("extra", {}):  # recipe.yaml
+            pass
+        else:
+            logger.warning("Did not find extra metadata section")
+        remote_url = extra.get("remote_url")
+        if remote_url := extra.get("remote_url"):
             if remote_url.startswith("git@github.com:"):
                 remote_url = remote_url.replace("git@github.com:", "https://github.com/")
                 if remote_url.endswith(".git"):
                     remote_url = remote_url[:-4]
-            sha = data.get("rendered_recipe", {}).get("extra", {}).get("sha")
+            sha = extra.get("sha")
             if sha and remote_url.startswith("https://github.com/"):
                 return [f"{remote_url}/commit/{sha}"]
             return remote_url
@@ -1125,9 +1131,25 @@ if isinstance(data, dict):
         )
         download = f"[artifact download]({_download_url})"
     maintainers = []
-    for user in (
-        data.get("rendered_recipe", {}).get("extra", {}).get("recipe-maintainers", ["*N/A*"])
-    ):
+    if recipe := data.get("rendered_recipe", {}).get("recipe"):  # recipe.yaml
+        recipe_format = f"recipe.yaml v{recipe.get("schema_version", 1)}"
+        rattler_build_version = data.get("rendered_recipe").get("system_tools").get("rattler-build", "")
+        built_with = f"`rattler-build {rattler_build_version}`"
+    else:
+        rendered_recipe = data["rendered_recipe"]
+        recipe_format = "meta.yaml"
+        conda_build_version = data.get("about", {}).get("conda_build_version", "")
+        conda_version = data.get("about", {}).get("conda_version", "")
+        built_with = "N/A"
+        if conda_build_version:
+            built_with = f"`conda-build {conda_build_version}`"
+        if conda_version:
+            built_with += f", `conda {conda_version}`"
+    extra = (
+        data.get("rendered_recipe", {}).get("extra", {})
+        or data.get("rendered_recipe", {}).get("recipe", {}).get("extra", {})
+    )
+    for user in extra.get("recipe-maintainers", ["*N/A*"]):
         if user == "*N/A*":
             maintainers.append(user)
         elif "/" in user:  # this is a team
@@ -1156,6 +1178,7 @@ if isinstance(data, dict):
             | `{channel}` | `{subdir}` | `{bar_esc(build_str)}` | `{extension}` |
             | **License** | **Uploaded** | **Maintainers** | **Provenance** |
             | `{bar_esc(about.get("license", "*N/A*"))}` | {uploaded} | {maintainers} | {provenance} |
+            | **Recipe:** | `{recipe_format}` | **Built with**: | {built_with} |
             | **Links:** | {download} | {project_urls} | {dashboard_markdown_links} |
             """
         )
