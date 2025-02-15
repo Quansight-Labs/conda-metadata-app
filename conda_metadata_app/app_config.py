@@ -7,6 +7,7 @@ import json
 import os
 from collections.abc import Iterable
 from enum import StrEnum
+from subprocess import CalledProcessError, check_output
 from typing import Literal, Self
 
 from pydantic import (
@@ -425,6 +426,23 @@ def export_json_schema() -> None:
     with open("app_config.schema.json", "w") as f:
         json.dump(AppConfig.model_json_schema(), f, indent=2)
         f.write("\n")
+
+
+def app_version() -> str:
+    try:
+        return check_output(
+            [
+                "git",
+                "--no-pager",
+                "log",
+                "-1",
+                "--pretty=format:`%h (%cd)`",
+                "--date=format:%Y-%m-%d %H:%M:%S",
+            ],
+            text=True,
+        ).strip()
+    except CalledProcessError:
+        return ""
 
 
 if __name__ == "__main__":

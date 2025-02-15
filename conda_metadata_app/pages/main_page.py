@@ -34,6 +34,7 @@ from conda_metadata_app.app_config import (
     MetadataRetrieval,
     PackageDiscoveryChoice,
     Secret,
+    app_version,
 )
 from conda_metadata_app.version_order import VersionOrder
 
@@ -62,10 +63,19 @@ yaml = YAML(typ="safe")
 yaml.allow_duplicate_keys = True
 yaml.default_flow_style = False
 logger = get_logger(__name__)
+
+
 st.set_page_config(
     page_title="conda metadata browser",
     page_icon="📦",
     initial_sidebar_state="expanded",
+    menu_items={
+        "about": f"""
+        **📦 conda-metadata-app `{app_version()}`**
+
+        Browse metadata from conda packages in conda-forge, bioconda and others.
+        """
+    },
 )
 
 EXTENSION_TO_CATEGORY = {
