@@ -10,6 +10,7 @@ platforms = ["linux-64", "win-64", "osx-arm64", "osx-64", "linux-aarch64"]
 dev = "python -m streamlit run --server.runOnSave=true app.py"
 deploy = "python -m streamlit run --server.headless=true --global.developmentMode=false app.py"
 schema = "python -m conda_metadata_app.app_config"
+save-version-info = "python -m conda_metadata_app.version_info"
 postinstall-production = "pip install --no-deps --disable-pip-version-check dist/conda_metadata_app-*.whl"
 
 

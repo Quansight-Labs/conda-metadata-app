@@ -8,3 +8,5 @@ pixi run -e default postinstall-production
 echo "#!/bin/sh" > /entrypoint.sh
 pixi shell-hook -e default -s bash >> /entrypoint.sh
 echo 'exec "$@"' >> /entrypoint.sh
+
+pixi run -e default save-version-info
