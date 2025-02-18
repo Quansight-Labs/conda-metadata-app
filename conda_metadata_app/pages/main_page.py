@@ -34,8 +34,8 @@ from conda_metadata_app.app_config import (
     MetadataRetrieval,
     PackageDiscoveryChoice,
     Secret,
-    app_version,
 )
+from conda_metadata_app.version_info import get_version_info
 from conda_metadata_app.version_order import VersionOrder
 
 if not os.environ.get("CACHE_DIR"):
@@ -71,7 +71,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
     menu_items={
         "about": f"""
-        **📦 conda-metadata-app `{app_version()}`**
+        **📦 conda-metadata-app `{get_version_info() or "(Version N/A)"}`**
 
         Browse metadata from conda packages in conda-forge, bioconda and others.
         """
