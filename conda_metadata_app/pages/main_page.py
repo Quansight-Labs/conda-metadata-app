@@ -71,7 +71,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
     menu_items={
         "about": f"""
-        **📦 conda-metadata-app `{get_version_info()}`**
+        **📦 conda-metadata-app `{get_version_info() or "(Version N/A)"}`**
 
         Browse metadata from conda packages in conda-forge, bioconda and others.
         """

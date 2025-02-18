@@ -6,8 +6,11 @@ import datetime
 import subprocess
 
 from pydantic import BaseModel, Field
+from streamlit.logger import get_logger
 
 VERSION_INFO_FILE = "version_info.json"
+
+LOGGER = get_logger(__name__)
 
 
 class VersionInfo(BaseModel):
@@ -33,6 +36,9 @@ def get_version_info_from_git() -> VersionInfo:
     You should only use this function from a Streamlit Cloud deployment or
     during the Docker build process, as neither git nor the `.git` directory
     will be available in the final Docker image!
+
+    :raises FileNotFoundError: If git is not available.
+    :raises subprocess.CalledProcessError: If the git command fails.
     """
     git_info = subprocess.check_output(
         [
@@ -65,18 +71,30 @@ def save_version_info_from_git() -> None:
         f.write(version_info.model_dump_json(indent=2))
 
 
-def get_version_info() -> VersionInfo:
+def get_version_info() -> VersionInfo | None:
     """
     Get the version information of the current app installation.
     This works as follows:
     1. Retrieve the version information from the `version_info.json` file (relevant for Docker image).
     2. If the file does not exist, retrieve the version information from git (relevant for Streamlit Cloud).
+
+    :return: The version information or None if it could not be retrieved.
     """
     try:
         with open(VERSION_INFO_FILE) as f:
             return VersionInfo.model_validate_json(f.read())
     except FileNotFoundError:
+        pass
+
+    # fall back to retrieving the version information from git
+    try:
         return get_version_info_from_git()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        LOGGER.warning(
+            "Unable to retrieve version information from git after finding that version.info.json is not available.",
+            exc_info=True,
+        )
+        return None
 
 
 if __name__ == "__main__":
