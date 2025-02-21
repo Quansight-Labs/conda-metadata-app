@@ -1260,7 +1260,9 @@ elif data == "show_latest":
         platforms = platforms[1:-1]
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
-        table.append(f"| {n} | <a href='{more_url}' target='_self'>{name}</a>| {version} | {platforms} | {published}")
+        table.append(
+            f"| {n} | <a href='{more_url}' target='_self'>{name}</a>| {version} | {platforms} | {published}"
+        )
     st.markdown(
         f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
     )
