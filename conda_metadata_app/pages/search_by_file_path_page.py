@@ -118,7 +118,7 @@ elif path_to_search:
         if channel == "cf":
             channel = "conda-forge"
         lines.append(
-            f"- <a href='/?q={channel}/{subdir}/{artifact}&with_broken=true' target='_self'>"
-            f"<code>{channel}/{subdir}::{artifact}</code></a>"
+            f"- [`{channel}/{subdir}::{artifact}`]"
+            f"(/?q={channel}/{subdir}/{artifact}&with_broken=true)"
         )
     st.write("\n".join(lines), unsafe_allow_html=True)
