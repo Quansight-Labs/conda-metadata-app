@@ -1215,15 +1215,17 @@ if isinstance(data, dict):
                         st.dataframe(
                             {
                                 "Spec": [s.strip() for s in specs],
-                                "Details": [f"/?q={channel}/{s.strip().split()[0]}" for s in specs],
+                                "Details": [
+                                    f"/?q={channel}/{s.strip().split()[0]}" for s in specs
+                                ],
                             },
                             use_container_width=True,
                             hide_index=False,
                             column_config={
                                 "Details": st.column_config.LinkColumn(display_text="Go")
                             },
-                            height=35*(len(specs)+1),
-                            selection_mode="single-column"
+                            height=35 * (len(specs) + 1),
+                            selection_mode="single-column",
                         )
                     else:
                         specs = "\n".join([s.strip() for s in specs])
@@ -1232,7 +1234,9 @@ if isinstance(data, dict):
             with c2:
                 if not hasattr(run_exports, "items"):
                     run_exports = {"weak": run_exports}
-                st.write(f"### Run exports ({sum(1 for val in run_exports.values() for _ in val)})")
+                st.write(
+                    f"### Run exports ({sum(1 for val in run_exports.values() for _ in val)})"
+                )
                 memfile = StringIO()
                 yaml.dump(run_exports, memfile)
                 memfile.seek(0)
@@ -1241,7 +1245,7 @@ if isinstance(data, dict):
         st.markdown(" ")
 
     if data.get("files"):
-        st.write(f"### Files ({len(data["files"]):,})")
+        st.write(f"### Files ({len(data['files']):,})")
         _content_analysis_plot(data["files"])
         if (n_files := len(data["files"])) > 10000:
             st.info(
@@ -1250,7 +1254,12 @@ if isinstance(data, dict):
                 icon="ℹ️",
             )
         all_files = "\n".join(data["files"][:10000])
-        st.code(all_files, language="text", line_numbers=True, height=23*min([25, len(data["files"])]))
+        st.code(
+            all_files,
+            language="text",
+            line_numbers=True,
+            height=23 * min([25, len(data["files"])]),
+        )
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
