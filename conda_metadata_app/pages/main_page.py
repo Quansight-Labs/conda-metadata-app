@@ -1206,17 +1206,33 @@ if isinstance(data, dict):
         ]:
             if specs:
                 with col:
-                    st.write(f"### {title}")
                     patched_specs = patched_data.get(key, {})
                     if patched_specs:
                         specs = list(unified_diff(specs, patched_specs, n=100))[3:]
-                    specs = "\n".join([s.strip() for s in specs])
-                    st.code(specs, language="diff", line_numbers=True)
+                    st.write(f"### {title} ({len(specs)})")
+                    richtable = st.toggle("Show as rich table", value=False, key=key)
+                    if richtable:
+                        st.dataframe(
+                            {
+                                "Spec": [s.strip() for s in specs],
+                                "Details": [f"/?q={channel}/{s.strip().split()[0]}" for s in specs],
+                            },
+                            use_container_width=True,
+                            hide_index=False,
+                            column_config={
+                                "Details": st.column_config.LinkColumn(display_text="Go")
+                            },
+                            height=35*(len(specs)+1),
+                            selection_mode="single-column"
+                        )
+                    else:
+                        specs = "\n".join([s.strip() for s in specs])
+                        st.code(specs, language="diff", line_numbers=True)
         if run_exports:
             with c2:
-                st.write("### Run exports")
                 if not hasattr(run_exports, "items"):
                     run_exports = {"weak": run_exports}
+                st.write(f"### Run exports ({sum(1 for val in run_exports.values() for _ in val)})")
                 memfile = StringIO()
                 yaml.dump(run_exports, memfile)
                 memfile.seek(0)
@@ -1225,16 +1241,16 @@ if isinstance(data, dict):
         st.markdown(" ")
 
     if data.get("files"):
-        st.write("### Files")
+        st.write(f"### Files ({len(data["files"]):,})")
         _content_analysis_plot(data["files"])
         if (n_files := len(data["files"])) > 10000:
             st.info(
-                f"Too many files ({n_files}). Showing only first 10K. "
+                f"Too many files ({n_files:,}). Showing only first 10K. "
                 "Check raw JSON below for full list.",
                 icon="ℹ️",
             )
         all_files = "\n".join(data["files"][:10000])
-        st.code(all_files, language="text", line_numbers=True)
+        st.code(all_files, language="text", line_numbers=True, height=23*min([25, len(data["files"])]))
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
@@ -1261,7 +1277,7 @@ elif data == "show_latest":
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
         table.append(
-            f"| {n} | [{name}]({more_url}) | {version} | {platforms} | {published}"
+            f"| {n} | <a href='{more_url}' target='_self'>{name}</a>| {version} | {platforms} | {published}"
         )
     st.markdown(
         f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
