@@ -112,3 +112,16 @@ else:
             """
         )
     )
+    data = find_artifacts_by_path(path_to_search)
+    st.write("### Search results (most recently published first)")
+    st.write(f"> {len(data)} artifacts ship `{path_to_search}`")
+    lines = []
+    for artifact in data:
+        channel, subdir, artifact = artifact.rsplit("/", 2)
+        if channel == "cf":
+            channel = "conda-forge"
+        lines.append(
+            f"- <a href='/?q={channel}/{subdir}/{artifact}&with_broken=true' target='_self'>"
+            f"<code>{channel}/{subdir}::{artifact}</code></a>"
+        )
+    st.write("\n".join(lines), unsafe_allow_html=True)

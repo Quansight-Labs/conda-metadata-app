@@ -915,15 +915,15 @@ with st.sidebar:
         else 0,
     )
 
-    _available_package_names = [""] + get_package_names(
-        channel
-    )  # empty string means: show RSS feed
+    _available_package_names = get_package_names(channel)
+    # empty string means: show RSS feed
     package_name = st.selectbox(
         "Enter a package name:",
         options=_available_package_names,
         key="package_name",
-        help=f"Choose one package out of the {len(_available_package_names) - 1:,} available ones. "
+        help=f"Choose one package out of the {len(_available_package_names):,} available ones. "
         "Underscore-leading names are sorted last.",
+        index=None,  # No choice by default, allows clearing field with (X) button
     )
     _available_subdirs = get_arch_subdirs_for_package(
         package_name, channel, with_broken=with_broken
@@ -1260,12 +1260,12 @@ elif data == "show_latest":
         platforms = platforms[1:-1]
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
-        table.append(f"| {n} | [{name}]({more_url})| {version} | {platforms} | {published}")
+        table.append(f"| {n} | <a href='{more_url}' target='_self'>{name}</a>| {version} | {platforms} | {published}")
     st.markdown(
         f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
     )
     st.markdown(f"> Last update: {rss_ret.find('channel/pubDate').text}.")
-    st.markdown("\n".join(table))
+    st.markdown("\n".join(table), unsafe_allow_html=True)
 elif isinstance(data, str) and data.startswith("error:"):
     st.error(data[6:])
 elif not data:
