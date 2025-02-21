@@ -24,7 +24,7 @@ py-rattler = ">=0.7.0,<0.8"
 conda-forge-metadata = ">=0.11.0,<0.12"
 conda-oci-mirror = ">=0.1.0,<0.2"
 streamlit = ">=1.39.0,<2"
-streamlit-searchbox = "==0.1.19"
+streamlit-searchbox = "==0.1.20"
 setuptools = "*"    # can be removed after conda-oci-mirror gets rid of it, https://github.com/channel-mirrors/conda-oci-mirror/pull/40
 
 [host-dependencies]
