@@ -1,4 +1,4 @@
-FROM ghcr.io/prefix-dev/pixi:0.31.0 AS build
+FROM ghcr.io/prefix-dev/pixi:0.41.4 AS build
 
 RUN apt update
 RUN apt install -y git
