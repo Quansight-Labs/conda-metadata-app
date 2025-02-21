@@ -55,7 +55,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-c1, c2 = st.columns([1, 0.25])
+c1, c2, c3 = st.columns([1, 0.25, 0.25])
 with c1:
     path_to_search = st_searchbox(
         autocomplete_paths,
@@ -70,21 +70,15 @@ with c2:
         disabled=not path_to_search,
         use_container_width=True,
     )
+with c3:
+    cleared = st.button(
+        "Clear",
+        key="clear",
+        use_container_width=True,
+    )
 
-if path_to_search:
-    data = find_artifacts_by_path(path_to_search)
-    st.write("### Search results (most recently published first)")
-    st.write(f"> {len(data)} artifacts ship `{path_to_search}`")
-    lines = []
-    for artifact in data:
-        channel, subdir, artifact = artifact.rsplit("/", 2)
-        if channel == "cf":
-            channel = "conda-forge"
-        lines.append(
-            f"- [`{channel}/{subdir}::{artifact}`](/?q={channel}/{subdir}/{artifact}&with_broken=true)"
-        )
-    st.write("\n".join(lines))
-else:
+if cleared or not path_to_search:
+    st.query_params.clear()
     st.write(
         cleandoc(
             """
@@ -112,3 +106,19 @@ else:
             """
         )
     )
+elif path_to_search:
+    st.query_params.clear()
+    st.query_params.path = path_to_search
+    data = find_artifacts_by_path(path_to_search)
+    st.write("### Search results (most recently published first)")
+    st.write(f"> {len(data)} artifacts ship `{path_to_search}`")
+    lines = []
+    for artifact in data:
+        channel, subdir, artifact = artifact.rsplit("/", 2)
+        if channel == "cf":
+            channel = "conda-forge"
+        lines.append(
+            f"- <a href='/?q={channel}/{subdir}/{artifact}&with_broken=true' target='_self'>"
+            f"<code>{channel}/{subdir}::{artifact}</code></a>"
+        )
+    st.write("\n".join(lines), unsafe_allow_html=True)

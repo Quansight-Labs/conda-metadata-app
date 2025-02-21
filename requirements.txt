@@ -7,5 +7,5 @@ py-rattler==0.7.0
 conda-forge-metadata==0.11.0
 git+https://github.com/channel-mirrors/conda-oci-mirror.git@25ea3e436f0b0bc5a9c646121efafc9c68e116cd # v0.1.0
 streamlit==1.39.0
-streamlit-searchbox==0.1.19
+streamlit-searchbox==0.1.20
 setuptools
