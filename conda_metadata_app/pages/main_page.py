@@ -1032,6 +1032,11 @@ if submitted or all([channel, subdir, package_name, version, build]):
     if with_broken:
         st.query_params.with_broken = str(with_broken).lower()
     with st.spinner("Fetching metadata..."):
+        if artifact.startswith("_") and artifact.endswith(".tar.bz2"):
+            # TarBz2 artifacts come from the OCI mirror, which can't host
+            # artifacts starting with `_`. Those packages are prepended with
+            # zzz_ instead.
+            artifact = f"zzz{artifact}"
         data = artifact_metadata(
             channel=channel,
             subdir=subdir,
