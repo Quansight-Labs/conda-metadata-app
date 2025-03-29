@@ -1298,7 +1298,7 @@ if isinstance(data, dict):
             all_files,
             language="text",
             line_numbers=True,
-            height=23 * min([25, len(data["files"])]),
+            height=23 * min([25, len(data["files"]) + 1]),
         )
 
     st.write("### Raw JSON")
