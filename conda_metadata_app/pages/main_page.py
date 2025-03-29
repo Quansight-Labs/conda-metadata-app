@@ -1032,6 +1032,11 @@ if submitted or all([channel, subdir, package_name, version, build]):
     if with_broken:
         st.query_params.with_broken = str(with_broken).lower()
     with st.spinner("Fetching metadata..."):
+        if artifact.startswith("_") and artifact.endswith(".tar.bz2"):
+            # TarBz2 artifacts come from the OCI mirror, which can't host
+            # artifacts starting with `_`. Those packages are prepended with
+            # zzz_ instead.
+            artifact = f"zzz{artifact}"
         data = artifact_metadata(
             channel=channel,
             subdir=subdir,
@@ -1141,14 +1146,12 @@ if isinstance(data, dict):
         )
         download = f"[artifact download]({_download_url})"
     maintainers = []
-    if recipe := data.get("rendered_recipe", {}).get("recipe"):  # recipe.yaml
+    rendered_recipe = data.get("rendered_recipe", {})
+    if recipe := rendered_recipe.get("recipe"):  # recipe.yaml
         recipe_format = f"recipe.yaml v{recipe.get('schema_version', 1)}"
-        rattler_build_version = (
-            data.get("rendered_recipe").get("system_tools").get("rattler-build", "")
-        )
+        rattler_build_version = rendered_recipe.get("system_tools").get("rattler-build", "")
         built_with = f"`rattler-build {rattler_build_version}`"
     else:
-        rendered_recipe = data["rendered_recipe"]
         recipe_format = "meta.yaml"
         conda_build_version = data.get("about", {}).get("conda_build_version", "")
         conda_version = data.get("about", {}).get("conda_version", "")
@@ -1157,9 +1160,7 @@ if isinstance(data, dict):
             built_with = f"`conda-build {conda_build_version}`"
         if conda_version:
             built_with += f", `conda {conda_version}`"
-    extra = data.get("rendered_recipe", {}).get("extra", {}) or data.get(
-        "rendered_recipe", {}
-    ).get("recipe", {}).get("extra", {})
+    extra = rendered_recipe.get("extra", {}) or recipe.get("extra", {})
     for user in extra.get("recipe-maintainers", ["*N/A*"]):
         if user == "*N/A*":
             maintainers.append(user)
@@ -1197,7 +1198,14 @@ if isinstance(data, dict):
     st.markdown(" ")
     dependencies = data.get("index", {}).get("depends", ())
     constraints = data.get("index", {}).get("constrains", ())
-    run_exports = data.get("rendered_recipe", {}).get("build", {}).get("run_exports", ())
+    if recipe:
+        # v1
+        run_exports = (
+            rendered_recipe.get("finalized_dependencies", {}).get("run", {}).get("run_exports", {})
+        )
+    else:
+        # v0
+        run_exports = rendered_recipe.get("build", {}).get("run_exports", {})
     if dependencies or constraints or run_exports:
         c1, c2 = st.columns([1, 1])
         for title, key, specs, col in [
@@ -1286,7 +1294,8 @@ elif data == "show_latest":
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
         table.append(
-            f"| {n} | <a href='{more_url}' target='_self'>{name}</a>| {version} | {platforms} | {published}"
+            f"| {n} | <a href='{more_url}' target='_self'>{name}</a>"
+            f"| {version} | {platforms} | {published}"
         )
     st.markdown(
         f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
