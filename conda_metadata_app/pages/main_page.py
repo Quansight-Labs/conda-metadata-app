@@ -904,6 +904,13 @@ with st.sidebar:
         help="If the source feedstock is archived, the text will be struck through. "
         "Requires extra API calls. Slow! Only for conda-forge",
     )
+    richtable = st.checkbox(
+        "Show dependencies as rich table",
+        value=app_config().render_dependencies_as_table,
+        key="richtable",
+        help="Render dependencies (and constraints) as a table with links to the package names",
+    )
+
     _all_channels = list(app_config().channels.keys())
     channel = st.selectbox(
         "Select a channel:",
@@ -1003,6 +1010,20 @@ def disable_button(query):
     if all([channel, subdir, package_name, version, build, extension]):
         return False
     return True
+
+
+def build_richtable(data, **kwargs):
+    return st.dataframe(
+        data,
+        use_container_width=True,
+        hide_index=False,
+        column_config={
+            "🔗": st.column_config.LinkColumn(display_text="Go", width="small"),
+        },
+        selection_mode="single-column",
+        row_height=35,
+        **kwargs,
+    )
 
 
 c1, c2 = st.columns([1, 0.15])
@@ -1218,22 +1239,17 @@ if isinstance(data, dict):
                     if patched_specs:
                         specs = list(unified_diff(specs, patched_specs, n=100))[3:]
                     st.write(f"### {title} ({len(specs)})")
-                    richtable = st.toggle("Show as rich table", value=False, key=key)
                     if richtable:
-                        st.dataframe(
+                        build_richtable(
                             {
                                 "Spec": [s.strip() for s in specs],
-                                "Details": [
-                                    f"/?q={channel}/{s.strip().split()[0]}" for s in specs
+                                "🔗": [
+                                    ""
+                                    if s.strip().startswith("__")
+                                    else f"/?q={channel}/{s.strip().split()[0]}"
+                                    for s in specs
                                 ],
-                            },
-                            use_container_width=True,
-                            hide_index=False,
-                            column_config={
-                                "Details": st.column_config.LinkColumn(display_text="Go")
-                            },
-                            height=35 * (len(specs) + 1),
-                            selection_mode="single-column",
+                            }
                         )
                     else:
                         specs = "\n".join([s.strip() for s in specs])
@@ -1245,11 +1261,24 @@ if isinstance(data, dict):
                 st.write(
                     f"### Run exports ({sum(1 for val in run_exports.values() for _ in val)})"
                 )
-                memfile = StringIO()
-                yaml.dump(run_exports, memfile)
-                memfile.seek(0)
-                st.code(memfile.getvalue(), language="yaml", line_numbers=True)
-
+                if richtable:
+                    run_exports_table = {"Spec": [], "Type": [], "🔗": []}
+                    for typ, exports in run_exports.items():
+                        for export in exports:
+                            export = export.strip()
+                            run_exports_table["Spec"].append(export)
+                            run_exports_table["Type"].append(typ)
+                            run_exports_table["🔗"].append(
+                                ""
+                                if export.strip().startswith("__")
+                                else f"/?q={channel}/{export.split()[0]}"
+                            )
+                    build_richtable(run_exports_table)
+                else:
+                    memfile = StringIO()
+                    yaml.dump(run_exports, memfile)
+                    memfile.seek(0)
+                    st.code(memfile.getvalue(), language="yaml", line_numbers=True)
         st.markdown(" ")
 
     if data.get("files"):

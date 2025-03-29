@@ -397,6 +397,12 @@ class AppConfig(BaseSettings):
     each artifact.
     """
 
+    render_dependencies_as_table: bool = False
+    """
+    Whether to use `st.dataframe` representations to render the dependencies and constraints
+    blocks, providing links to the mentioned package names.
+    """
+
     @model_validator(mode="after")
     def _validate_dashboards(self) -> Self:
         for channel in self.channels.values():
