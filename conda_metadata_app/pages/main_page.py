@@ -1228,7 +1228,10 @@ if isinstance(data, dict):
         # v0
         run_exports = rendered_recipe.get("build", {}).get("run_exports", {})
     if dependencies or constraints or run_exports:
-        c1, c2 = st.columns([1, 1])
+        if sum(map(bool, [dependencies, constraints, run_exports])) > 1:
+            c1, c2 = st.columns([1, 1])
+        else:
+            c1 = c2 = st.container()
         for title, key, specs, col in [
             ("Dependencies", "depends", dependencies, c1),
             ("Constraints", "constrains", constraints, c2),
