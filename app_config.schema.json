@@ -356,10 +356,10 @@
       "title": "Enable Filetype Plot",
       "type": "boolean"
     },
-    "render_dependencies_as_table": {
+    "render_dependencies_as_table_default": {
       "default": false,
-      "description": "Whether to use `st.dataframe` representations to render the dependencies and constraints\nblocks, providing links to the mentioned package names.",
-      "title": "Render Dependencies As Table",
+      "description": "Whether to use `st.dataframe` representations to render the dependencies and constraints\nblocks, providing links to the mentioned package names. This is just the default option,\nusers can still override in the application.",
+      "title": "Render Dependencies As Table Default",
       "type": "boolean"
     }
   },

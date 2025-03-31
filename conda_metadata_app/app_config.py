@@ -397,10 +397,11 @@ class AppConfig(BaseSettings):
     each artifact.
     """
 
-    render_dependencies_as_table: bool = False
+    render_dependencies_as_table_default: bool = False
     """
     Whether to use `st.dataframe` representations to render the dependencies and constraints
-    blocks, providing links to the mentioned package names.
+    blocks, providing links to the mentioned package names. This is just the default option,
+    users can still override in the application.
     """
 
     @model_validator(mode="after")

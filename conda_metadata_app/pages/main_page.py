@@ -770,7 +770,7 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
     """
     channel, subdir, artifact, package_name, version, build, extension = [None] * 7
     with_broken = False
-    richtable = False
+    richtable = app_config().render_dependencies_as_table_default
     path = None
     url_params = st.query_params.to_dict()
     ok = True
@@ -914,7 +914,7 @@ with st.sidebar:
     )
     richtable = st.checkbox(
         "Show dependencies as rich table",
-        value=app_config().render_dependencies_as_table,
+        value=app_config().render_dependencies_as_table_default,
         key="richtable",
         help="Render dependencies (and constraints) as a table with links to the package names",
     )
@@ -1060,10 +1060,9 @@ if submitted or all([channel, subdir, package_name, version, build]):
     channel, subdir = channel_subdir.rsplit("/", 1)
     st.query_params.clear()
     st.query_params.q = f"{channel}/{subdir}/{artifact}"
+    st.query_params.richtable = str(richtable).lower()
     if with_broken:
         st.query_params.with_broken = str(with_broken).lower()
-    if richtable:
-        st.query_params.richtable = str(richtable).lower()
     with st.spinner("Fetching metadata..."):
         if artifact.startswith("_") and artifact.endswith(".tar.bz2"):
             # TarBz2 artifacts come from the OCI mirror, which can't host
@@ -1260,7 +1259,7 @@ if isinstance(data, dict):
                             ms = MatchSpec(spec)
                             run_data["Package"].append(
                                 f"/?q={channel}/{ms.name.source}"
-                                f"{'&richtable=true' if richtable else ''}"
+                                f"&richtable={str(richtable).lower()}"
                                 f"{'&with_broken=true' if with_broken else ''}"
                             )
                             run_data["Version"].append(ms.version or "")
@@ -1283,7 +1282,7 @@ if isinstance(data, dict):
                             ms = MatchSpec(export)
                             run_exports_table["Package"].append(
                                 f"/?q={channel}/{ms.name.source}"
-                                f"{'&richtable=true' if richtable else ''}"
+                                f"&richtable={str(richtable).lower()}"
                                 f"{'&with_broken=true' if with_broken else ''}"
                             )
                             run_exports_table["Version"].append(ms.version or "")
