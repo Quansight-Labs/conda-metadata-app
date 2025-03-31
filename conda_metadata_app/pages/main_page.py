@@ -1018,7 +1018,9 @@ def build_richtable(data, **kwargs):
         use_container_width=True,
         hide_index=False,
         column_config={
-            "🔗": st.column_config.LinkColumn(display_text="Go", width="small"),
+            "Spec": st.column_config.LinkColumn(
+                display_text=r"[/#]\?q=\S+/(\S+)",
+            ),
         },
         selection_mode="single-column",
         row_height=35,
@@ -1243,17 +1245,12 @@ if isinstance(data, dict):
                         specs = list(unified_diff(specs, patched_specs, n=100))[3:]
                     st.write(f"### {title} ({len(specs)})")
                     if richtable:
-                        build_richtable(
-                            {
-                                "Spec": [s.strip() for s in specs],
-                                "🔗": [
-                                    ""
-                                    if s.strip().startswith("__")
-                                    else f"/?q={channel}/{s.strip().split()[0]}"
-                                    for s in specs
-                                ],
-                            }
-                        )
+                        run_data = {"Spec": [], "Constraints": []}
+                        for spec in specs:
+                            split_spec = spec.strip().split()
+                            run_data["Spec"].append(f"/?q={channel}/{split_spec[0]}")
+                            run_data["Constraints"].append(" ".join(split_spec[1:]))
+                        build_richtable(run_data)
                     else:
                         specs = "\n".join([s.strip() for s in specs])
                         st.code(specs, language="diff", line_numbers=True)
@@ -1265,17 +1262,13 @@ if isinstance(data, dict):
                     f"### Run exports ({sum(1 for val in run_exports.values() for _ in val)})"
                 )
                 if richtable:
-                    run_exports_table = {"Spec": [], "Type": [], "🔗": []}
+                    run_exports_table = {"Spec": [], "Constraints": [], "Type": []}
                     for typ, exports in run_exports.items():
                         for export in exports:
-                            export = export.strip()
-                            run_exports_table["Spec"].append(export)
+                            split_export = export.strip().split()
+                            run_exports_table["Spec"].append(f"/?q={channel}/{split_export[0]}")
+                            run_exports_table["Constraints"].append(" ".join(split_export[1:]))
                             run_exports_table["Type"].append(typ)
-                            run_exports_table["🔗"].append(
-                                ""
-                                if export.strip().startswith("__")
-                                else f"/?q={channel}/{export.split()[0]}"
-                            )
                     build_richtable(run_exports_table)
                 else:
                     memfile = StringIO()
