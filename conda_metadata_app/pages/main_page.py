@@ -1060,7 +1060,8 @@ if submitted or all([channel, subdir, package_name, version, build]):
     channel, subdir = channel_subdir.rsplit("/", 1)
     st.query_params.clear()
     st.query_params.q = f"{channel}/{subdir}/{artifact}"
-    st.query_params.richtable = str(richtable).lower()
+    if richtable != app_config().render_dependencies_as_table_default:
+        st.query_params.richtable = str(richtable).lower()
     if with_broken:
         st.query_params.with_broken = str(with_broken).lower()
     with st.spinner("Fetching metadata..."):
@@ -1258,9 +1259,16 @@ if isinstance(data, dict):
                         for spec in specs:
                             ms = MatchSpec(spec)
                             run_data["Package"].append(
-                                f"/?q={channel}/{ms.name.source}"
-                                f"&richtable={str(richtable).lower()}"
-                                f"{'&with_broken=true' if with_broken else ''}"
+                                "".join(
+                                    [
+                                        f"/?q={channel}/{ms.name.source}",
+                                        f"&richtable={str(richtable).lower()}"
+                                        if richtable
+                                        != app_config().render_dependencies_as_table_default
+                                        else "",
+                                        f"{'&with_broken=true' if with_broken else ''}",
+                                    ]
+                                )
                             )
                             run_data["Version"].append(ms.version or "")
                             run_data["Build"].append(ms.build or "")
@@ -1281,9 +1289,16 @@ if isinstance(data, dict):
                         for export in exports:
                             ms = MatchSpec(export)
                             run_exports_table["Package"].append(
-                                f"/?q={channel}/{ms.name.source}"
-                                f"&richtable={str(richtable).lower()}"
-                                f"{'&with_broken=true' if with_broken else ''}"
+                                "".join(
+                                    [
+                                        f"/?q={channel}/{ms.name.source}",
+                                        f"&richtable={str(richtable).lower()}"
+                                        if richtable
+                                        != app_config().render_dependencies_as_table_default
+                                        else "",
+                                        f"{'&with_broken=true' if with_broken else ''}",
+                                    ]
+                                )
                             )
                             run_exports_table["Version"].append(ms.version or "")
                             run_exports_table["Build"].append(ms.build or "")
