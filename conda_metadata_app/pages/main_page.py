@@ -22,6 +22,7 @@ from typing import Any
 
 import zstandard as zstd
 from conda_forge_metadata.types import ArtifactData
+from rattler.match_spec import MatchSpec
 from rattler.platform import PlatformLiteral
 from requests.auth import HTTPBasicAuth
 
@@ -765,14 +766,18 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
     - q: channel/subdir::package_name-version-build
     - q: channel/subdir/package_name-version-build.extension
     - with_broken: true or false
+    - richtable: true or false
     """
     channel, subdir, artifact, package_name, version, build, extension = [None] * 7
     with_broken = False
+    richtable = False
     path = None
     url_params = st.query_params.to_dict()
     ok = True
     if "with_broken" in url_params:
         with_broken = url_params.pop("with_broken") == "true"
+    if "richtable" in url_params:
+        richtable = url_params.pop("richtable") == "true"
     if "q" in url_params:
         query = url_params["q"]
         if query in app_config().channels:  # channel only
@@ -831,6 +836,7 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
         "extension": extension,
         "path": path,
         "with_broken": with_broken,
+        "richtable": richtable,
     }, ok
 
 
@@ -867,6 +873,8 @@ elif url_params["artifact"] and "channel" not in st.session_state:
         st.session_state.extension = url_params["extension"]
     if url_params["with_broken"]:
         st.session_state.with_broken = url_params["with_broken"]
+    if url_params["richtable"]:
+        st.session_state.richtable = url_params["richtable"]
 
 _patched_metadata_channels = [
     channel
@@ -1018,8 +1026,8 @@ def build_richtable(data, **kwargs):
         use_container_width=True,
         hide_index=False,
         column_config={
-            "Spec": st.column_config.LinkColumn(
-                display_text=r"[/#]\?q=\S+/(\S+)",
+            "Package": st.column_config.LinkColumn(
+                display_text=r"[/#]\?q=\S+/([^&]+)",
             ),
         },
         selection_mode="single-column",
@@ -1054,6 +1062,8 @@ if submitted or all([channel, subdir, package_name, version, build]):
     st.query_params.q = f"{channel}/{subdir}/{artifact}"
     if with_broken:
         st.query_params.with_broken = str(with_broken).lower()
+    if richtable:
+        st.query_params.richtable = str(richtable).lower()
     with st.spinner("Fetching metadata..."):
         if artifact.startswith("_") and artifact.endswith(".tar.bz2"):
             # TarBz2 artifacts come from the OCI mirror, which can't host
@@ -1245,11 +1255,16 @@ if isinstance(data, dict):
                         specs = list(unified_diff(specs, patched_specs, n=100))[3:]
                     st.write(f"### {title} ({len(specs)})")
                     if richtable:
-                        run_data = {"Spec": [], "Constraints": []}
+                        run_data = {"Package": [], "Version": [], "Build": []}
                         for spec in specs:
-                            split_spec = spec.strip().split()
-                            run_data["Spec"].append(f"/?q={channel}/{split_spec[0]}")
-                            run_data["Constraints"].append(" ".join(split_spec[1:]))
+                            ms = MatchSpec(spec)
+                            run_data["Package"].append(
+                                f"/?q={channel}/{ms.name.source}"
+                                f"{'&richtable=true' if richtable else ''}"
+                                f"{'&with_broken=true' if with_broken else ''}"
+                            )
+                            run_data["Version"].append(ms.version or "")
+                            run_data["Build"].append(ms.build or "")
                         build_richtable(run_data)
                     else:
                         specs = "\n".join([s.strip() for s in specs])
@@ -1262,12 +1277,17 @@ if isinstance(data, dict):
                     f"### Run exports ({sum(1 for val in run_exports.values() for _ in val)})"
                 )
                 if richtable:
-                    run_exports_table = {"Spec": [], "Constraints": [], "Type": []}
+                    run_exports_table = {"Package": [], "Version": [], "Build": [], "Type": []}
                     for typ, exports in run_exports.items():
                         for export in exports:
-                            split_export = export.strip().split()
-                            run_exports_table["Spec"].append(f"/?q={channel}/{split_export[0]}")
-                            run_exports_table["Constraints"].append(" ".join(split_export[1:]))
+                            ms = MatchSpec(export)
+                            run_exports_table["Package"].append(
+                                f"/?q={channel}/{ms.name.source}"
+                                f"{'&richtable=true' if richtable else ''}"
+                                f"{'&with_broken=true' if with_broken else ''}"
+                            )
+                            run_exports_table["Version"].append(ms.version or "")
+                            run_exports_table["Build"].append(ms.build or "")
                             run_exports_table["Type"].append(typ)
                     build_richtable(run_exports_table)
                 else:
