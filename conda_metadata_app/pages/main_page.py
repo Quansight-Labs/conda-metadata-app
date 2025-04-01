@@ -1239,76 +1239,55 @@ if isinstance(data, dict):
     else:
         # v0
         run_exports = rendered_recipe.get("build", {}).get("run_exports", {})
-    if dependencies or constraints or run_exports:
-        if sum(map(bool, [dependencies, constraints, run_exports])) > 1:
-            c1, c2 = st.columns([1, 1])
-        else:
-            c1 = c2 = st.container()
-        for title, key, specs, col in [
-            ("Dependencies", "depends", dependencies, c1),
-            ("Constraints", "constrains", constraints, c2),
+
+        for title, key, specs in [
+            ("Dependencies", "depends", dependencies),
+            ("Constraints", "constrains", constraints),
+            ("Run exports", "run_exports", run_exports),
         ]:
             if specs:
-                with col:
+                if key in ("depends", "constrains"):
                     patched_specs = patched_data.get(key, {})
                     if patched_specs:
                         specs = list(unified_diff(specs, patched_specs, n=100))[3:]
-                    st.write(f"### {title} ({len(specs)})")
-                    if richtable:
-                        run_data = {"Package": [], "Version": [], "Build": []}
-                        for spec in specs:
-                            ms = MatchSpec(spec)
-                            run_data["Package"].append(
-                                "".join(
-                                    [
-                                        f"/?q={channel}/{ms.name.source}",
-                                        f"&richtable={str(richtable).lower()}"
-                                        if richtable
-                                        != app_config().render_dependencies_as_table_default
-                                        else "",
-                                        f"{'&with_broken=true' if with_broken else ''}",
-                                    ]
-                                )
-                            )
-                            run_data["Version"].append(ms.version or "")
-                            run_data["Build"].append(ms.build or "")
-                        build_richtable(run_data)
-                    else:
-                        specs = "\n".join([s.strip() for s in specs])
-                        st.code(specs, language="diff", line_numbers=True)
-        if run_exports:
-            with c2:
-                if not hasattr(run_exports, "items"):
-                    run_exports = {"weak": run_exports}
-                st.write(
-                    f"### Run exports ({sum(1 for val in run_exports.values() for _ in val)})"
-                )
-                if richtable:
-                    run_exports_table = {"Package": [], "Version": [], "Build": [], "Type": []}
-                    for typ, exports in run_exports.items():
-                        for export in exports:
-                            ms = MatchSpec(export)
-                            run_exports_table["Package"].append(
-                                "".join(
-                                    [
-                                        f"/?q={channel}/{ms.name.source}",
-                                        f"&richtable={str(richtable).lower()}"
-                                        if richtable
-                                        != app_config().render_dependencies_as_table_default
-                                        else "",
-                                        f"{'&with_broken=true' if with_broken else ''}",
-                                    ]
-                                )
-                            )
-                            run_exports_table["Version"].append(ms.version or "")
-                            run_exports_table["Build"].append(ms.build or "")
-                            run_exports_table["Type"].append(typ)
-                    build_richtable(run_exports_table)
+                    specs = {"_": specs}  # Just to unify interface with run_exports
                 else:
-                    memfile = StringIO()
-                    yaml.dump(run_exports, memfile)
-                    memfile.seek(0)
-                    st.code(memfile.getvalue(), language="yaml", line_numbers=True)
+                    if not hasattr(specs, "items"):
+                        specs = {"weak": specs}
+                st.write(f"### {title} ({sum([len(s) for s in specs.values()])})")
+                if richtable:
+                    richtable_data = {"Package": [], "Version": [], "Build": []}
+                    if key == "run_exports":
+                        richtable_data["Type"] = []
+                    for typ, speclist in specs.items():
+                        for spec in speclist:
+                            ms = MatchSpec(spec)
+                            richtable_data["Package"].append(
+                                "".join(
+                                    [
+                                        f"/?q={channel}/{ms.name.source}",
+                                        f"&richtable={str(richtable).lower()}"
+                                        if richtable
+                                        != app_config().render_dependencies_as_table_default
+                                        else "",
+                                        f"{'&with_broken=true' if with_broken else ''}",
+                                    ]
+                                )
+                            )
+                            richtable_data["Version"].append(ms.version or "")
+                            richtable_data["Build"].append(ms.build or "")
+                            if key == "run_exports":
+                                richtable_data["Type"].append(typ)
+                    build_richtable(richtable_data)
+                else:
+                    if key == "run_exports":
+                        memfile = StringIO()
+                        yaml.dump(specs, memfile)
+                        memfile.seek(0)
+                        st.code(memfile.getvalue(), language="yaml", line_numbers=True)
+                    else:
+                        specs = "\n".join([s.strip() for s in specs["_"]])
+                        st.code(specs, language="diff", line_numbers=True)
         st.markdown(" ")
 
     if data.get("files"):
