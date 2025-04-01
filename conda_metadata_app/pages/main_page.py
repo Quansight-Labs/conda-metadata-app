@@ -22,6 +22,7 @@ from typing import Any
 
 import zstandard as zstd
 from conda_forge_metadata.types import ArtifactData
+from rattler.match_spec import MatchSpec
 from rattler.platform import PlatformLiteral
 from requests.auth import HTTPBasicAuth
 
@@ -777,14 +778,18 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
     - q: channel/subdir::package_name-version-build
     - q: channel/subdir/package_name-version-build.extension
     - with_broken: true or false
+    - richtable: true or false
     """
     channel, subdir, artifact, package_name, version, build, extension = [None] * 7
     with_broken = False
+    richtable = app_config().render_dependencies_as_table_default
     path = None
     url_params = st.query_params.to_dict()
     ok = True
     if "with_broken" in url_params:
         with_broken = url_params.pop("with_broken") == "true"
+    if "richtable" in url_params:
+        richtable = url_params.pop("richtable") == "true"
     if "q" in url_params:
         query = url_params["q"]
         if query in app_config().channels:  # channel only
@@ -843,6 +848,7 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
         "extension": extension,
         "path": path,
         "with_broken": with_broken,
+        "richtable": richtable,
     }, ok
 
 
@@ -879,6 +885,8 @@ elif url_params["artifact"] and "channel" not in st.session_state:
         st.session_state.extension = url_params["extension"]
     if url_params["with_broken"]:
         st.session_state.with_broken = url_params["with_broken"]
+    if url_params["richtable"]:
+        st.session_state.richtable = url_params["richtable"]
 
 _patched_metadata_channels = [
     channel
@@ -916,6 +924,13 @@ with st.sidebar:
         help="If the source feedstock is archived, the text will be struck through. "
         "Requires extra API calls. Slow! Only for conda-forge",
     )
+    richtable = st.checkbox(
+        "Show dependencies as rich table",
+        value=app_config().render_dependencies_as_table_default,
+        key="richtable",
+        help="Render dependencies (and constraints) as a table with links to the package names",
+    )
+
     _all_channels = list(app_config().channels.keys())
     channel = st.selectbox(
         "Select a channel:",
@@ -1017,6 +1032,22 @@ def disable_button(query):
     return True
 
 
+def build_richtable(data, **kwargs):
+    return st.dataframe(
+        data,
+        use_container_width=True,
+        hide_index=False,
+        column_config={
+            "Package": st.column_config.LinkColumn(
+                display_text=r"[/#]\?q=\S+/([^&]+)",
+            ),
+        },
+        selection_mode="single-column",
+        row_height=35,
+        **kwargs,
+    )
+
+
 c1, c2 = st.columns([1, 0.15])
 with c1:
     query = st.text_input(
@@ -1041,6 +1072,8 @@ if submitted or all([channel, subdir, package_name, version, build]):
     channel, subdir = channel_subdir.rsplit("/", 1)
     st.query_params.clear()
     st.query_params.q = f"{channel}/{subdir}/{artifact}"
+    if richtable != app_config().render_dependencies_as_table_default:
+        st.query_params.richtable = str(richtable).lower()
     if with_broken:
         st.query_params.with_broken = str(with_broken).lower()
     with st.spinner("Fetching metadata..."):
@@ -1218,43 +1251,78 @@ if isinstance(data, dict):
     else:
         # v0
         run_exports = rendered_recipe.get("build", {}).get("run_exports", {})
-    if dependencies or constraints or run_exports:
-        c1, c2 = st.columns([1, 1])
-        for title, key, specs, col in [
-            ("Dependencies", "depends", dependencies, c1),
-            ("Constraints", "constrains", constraints, c2),
-        ]:
-            if specs:
-                with col:
-                    st.write(f"### {title}")
-                    patched_specs = patched_data.get(key, {})
-                    if patched_specs:
-                        specs = list(unified_diff(specs, patched_specs, n=100))[3:]
-                    specs = "\n".join([s.strip() for s in specs])
-                    st.code(specs, language="diff", line_numbers=True)
-        if run_exports:
-            with c2:
-                st.write("### Run exports")
-                if not hasattr(run_exports, "items"):
-                    run_exports = {"weak": run_exports}
-                memfile = StringIO()
-                yaml.dump(run_exports, memfile)
-                memfile.seek(0)
-                st.code(memfile.getvalue(), language="yaml", line_numbers=True)
 
+    if richtable:
+        c1 = c2 = st.container()
+    else:
+        c1, c2 = st.columns(2)
+    for title, key, specs, col in [
+        ("Dependencies", "depends", dependencies, c1),
+        ("Constraints", "constrains", constraints, c2),
+        ("Run exports", "run_exports", run_exports, c2),
+    ]:
+        if specs:
+            if key in ("depends", "constrains"):
+                patched_specs = patched_data.get(key, {})
+                if patched_specs:
+                    specs = list(unified_diff(specs, patched_specs, n=100))[3:]
+                specs = {"_": specs}  # Just to unify interface with run_exports
+            else:
+                if not hasattr(specs, "items"):
+                    specs = {"weak": specs}
+            with col:
+                st.write(f"### {title} ({sum([len(s) for s in specs.values()])})")
+                if richtable:
+                    richtable_data = {"Package": [], "Version": [], "Build": []}
+                    if key == "run_exports":
+                        richtable_data["Type"] = []
+                    for typ, speclist in specs.items():
+                        for spec in speclist:
+                            ms = MatchSpec(spec)
+                            richtable_data["Package"].append(
+                                "".join(
+                                    [
+                                        f"/?q={channel}/{ms.name.source}",
+                                        f"&richtable={str(richtable).lower()}"
+                                        if richtable
+                                        != app_config().render_dependencies_as_table_default
+                                        else "",
+                                        f"{'&with_broken=true' if with_broken else ''}",
+                                    ]
+                                )
+                            )
+                            richtable_data["Version"].append(ms.version or "")
+                            richtable_data["Build"].append(ms.build or "")
+                            if key == "run_exports":
+                                richtable_data["Type"].append(typ)
+                    build_richtable(richtable_data)
+                else:
+                    if key == "run_exports":
+                        memfile = StringIO()
+                        yaml.dump(specs, memfile)
+                        memfile.seek(0)
+                        st.code(memfile.getvalue(), language="yaml", line_numbers=True)
+                    else:
+                        specs = "\n".join([s.strip() for s in specs["_"]])
+                        st.code(specs, language="diff", line_numbers=True)
         st.markdown(" ")
 
     if data.get("files"):
-        st.write("### Files")
+        st.write(f"### Files ({len(data['files']):,})")
         _content_analysis_plot(data["files"])
         if (n_files := len(data["files"])) > 10000:
             st.info(
-                f"Too many files ({n_files}). Showing only first 10K. "
+                f"Too many files ({n_files:,}). Showing only first 10K. "
                 "Check raw JSON below for full list.",
                 icon="ℹ️",
             )
         all_files = "\n".join(data["files"][:10000])
-        st.code(all_files, language="text", line_numbers=True)
+        st.code(
+            all_files,
+            language="text",
+            line_numbers=True,
+            height=23 * min([25, len(data["files"]) + 1]),
+        )
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
@@ -1280,7 +1348,10 @@ elif data == "show_latest":
         platforms = platforms[1:-1]
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
-        table.append(f"| {n} | [{name}]({more_url}) | {version} | {platforms} | {published}")
+        table.append(
+            f"| {n} | <a href='{more_url}' target='_self'>{name}</a>"
+            f"| {version} | {platforms} | {published}"
+        )
     st.markdown(
         f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
     )
