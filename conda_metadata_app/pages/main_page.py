@@ -1240,20 +1240,25 @@ if isinstance(data, dict):
         # v0
         run_exports = rendered_recipe.get("build", {}).get("run_exports", {})
 
-        for title, key, specs in [
-            ("Dependencies", "depends", dependencies),
-            ("Constraints", "constrains", constraints),
-            ("Run exports", "run_exports", run_exports),
-        ]:
-            if specs:
-                if key in ("depends", "constrains"):
-                    patched_specs = patched_data.get(key, {})
-                    if patched_specs:
-                        specs = list(unified_diff(specs, patched_specs, n=100))[3:]
-                    specs = {"_": specs}  # Just to unify interface with run_exports
-                else:
-                    if not hasattr(specs, "items"):
-                        specs = {"weak": specs}
+    if richtable:
+        c1 = c2 = st.container()
+    else:
+        c1, c2 = st.columns(2)
+    for title, key, specs, col in [
+        ("Dependencies", "depends", dependencies, c1),
+        ("Constraints", "constrains", constraints, c2),
+        ("Run exports", "run_exports", run_exports, c2),
+    ]:
+        if specs:
+            if key in ("depends", "constrains"):
+                patched_specs = patched_data.get(key, {})
+                if patched_specs:
+                    specs = list(unified_diff(specs, patched_specs, n=100))[3:]
+                specs = {"_": specs}  # Just to unify interface with run_exports
+            else:
+                if not hasattr(specs, "items"):
+                    specs = {"weak": specs}
+            with col:
                 st.write(f"### {title} ({sum([len(s) for s in specs.values()])})")
                 if richtable:
                     richtable_data = {"Package": [], "Version": [], "Build": []}
