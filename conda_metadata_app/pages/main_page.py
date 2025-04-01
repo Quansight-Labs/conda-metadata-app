@@ -757,6 +757,18 @@ def is_archived_repo(repo_url_or_owner_repo) -> bool:
     return False
 
 
+def artifact_size(url) -> str:
+    size = 0
+    with requests.get(url, stream=True) as r:
+        if r.ok:
+            size = int(r.headers.get("Content-length", 0))
+    for unit in ("", "Ki", "Mi", "Gi"):
+        if abs(size) < 1024.0:
+            return f"{size:3.1f}{unit}B"
+        size /= 1024.0
+    return f"{size:.1f}TiB"
+
+
 def parse_url_params() -> tuple[dict[str, Any], bool]:
     """
     Allowed query params:
@@ -1144,7 +1156,7 @@ if isinstance(data, dict):
             build_string=build_str,
             extension=extension,
         )
-        download = f"[artifact download]({_download_url})"
+        download = f"[download]({_download_url})"
     maintainers = []
     rendered_recipe = data.get("rendered_recipe", {})
     if recipe := rendered_recipe.get("recipe"):  # recipe.yaml
@@ -1191,7 +1203,7 @@ if isinstance(data, dict):
             | **License** | **Uploaded** | **Maintainers** | **Provenance** |
             | `{bar_esc(about.get("license", "*N/A*"))}` | {uploaded} | {maintainers} | {provenance} |
             | **Recipe:** | `{recipe_format}` | **Built with**: | {built_with} |
-            | **Links:** | {download} | {project_urls} | {dashboard_markdown_links} |
+            | **Links:** | {download} ({artifact_size(_download_url)}) | {project_urls} | {dashboard_markdown_links} |
             """
         )
     )
