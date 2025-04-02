@@ -843,6 +843,7 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
         "subdir": subdir,
         "artifact": artifact,
         "package_name": package_name,
+        "_prev_package_name": package_name,
         "version": version,
         "build": build,
         "extension": extension,
@@ -869,22 +870,34 @@ elif url_params["artifact"] and "channel" not in st.session_state:
     # Initialize state from URL params, only on first run
     # These state keys match the sidebar widgets keys below
     st.session_state.channel = url_params["channel"]
-    if url_params["subdir"] is not None:
-        st.session_state.subdir = url_params["subdir"]
     if url_params["package_name"] is not None:
         _package_name = url_params["package_name"]
         if _package_name in get_package_names(url_params["channel"]):
             st.session_state.package_name = url_params["package_name"]
+            st.session_state._prev_package_name = url_params["package_name"]
         else:
             st.error(f"Package `{_package_name}` not yet available in {url_params['channel']}!")
+    if url_params["with_broken"]:
+        st.session_state.with_broken = url_params["with_broken"]
+    if url_params["subdir"] is not None:
+        if st.session_state.package_name and st.session_state.channel:
+            if url_params["subdir"] in get_arch_subdirs_for_package(
+                st.session_state.package_name,
+                st.session_state.channel,
+                with_broken=url_params.get("with_broken", False),
+            ):
+                st.session_state.subdir = url_params["subdir"]
+            else:
+                st.info(
+                    f"Subdir `{url_params['subdir']}` is not available for "
+                    f"{st.session_state.package_name}. Defaulting to auto-selection."
+                )
     if url_params["version"] is not None:
         st.session_state.version = url_params["version"]
     if url_params["build"] is not None:
         st.session_state.build = url_params["build"]
     if url_params["extension"] is not None:
         st.session_state.extension = url_params["extension"]
-    if url_params["with_broken"]:
-        st.session_state.with_broken = url_params["with_broken"]
     if url_params["richtable"]:
         st.session_state.richtable = url_params["richtable"]
 
@@ -943,29 +956,53 @@ with st.sidebar:
     )
 
     _available_package_names = get_package_names(channel)
-    # empty string means: show RSS feed
-    package_name = st.selectbox(
-        "Enter a package name:",
-        options=_available_package_names,
-        key="package_name",
-        help=f"Choose one package out of the {len(_available_package_names):,} available ones. "
-        "Underscore-leading names are sorted last.",
-        index=None,  # No choice by default, allows clearing field with (X) button
-    )
+    sc1, sc2 = st.columns((5, 1), vertical_alignment="bottom")
+    # All of these extra session state for package names is to handle
+    # a behavior with backspace presses. selectbox returns None on backspace,
+    # which takes us back to the frontpage and reinitializes all the dropdowns.
+    # we have to memo the previous value if non None, and also provide a way to
+    # actually go back home on cleared values (hence the house emoji button)
+    if st.session_state.get("_cleared_package_name"):
+        st.session_state["package_name"] = None
+    with sc1:
+        # empty string means: show RSS feed
+        package_name = st.selectbox(
+            "Enter a package name:",
+            options=_available_package_names,
+            key="package_name",
+            help=f"Choose one package out of the {len(_available_package_names):,} available ones. "
+            "Underscore-leading names are sorted last.",
+            index=None,
+        )
+    with sc2:
+        clear_package_name = st.session_state["_cleared_package_name"] = st.button("🏠")
+    if clear_package_name:
+        st.session_state["_prev_package_name"] = package_name = None
+        st.rerun()
+    elif package_name:
+        st.session_state["_prev_package_name"] = package_name
+    else:
+        package_name = st.session_state.get("_prev_package_name")
     _available_subdirs = get_arch_subdirs_for_package(
         package_name, channel, with_broken=with_broken
     )
     _best_subdir, _best_version = _best_version_in_subdir(
         package_name, channel, with_broken=with_broken
     )
-    if _best_subdir and not getattr(st.session_state, "subdir", None):
-        st.session_state.subdir = _best_subdir
-    if _best_version and not getattr(st.session_state, "version", None):
-        st.session_state.version = _best_version
-
+    if not getattr(st.session_state, "subdir", None):
+        # Only choose "best" if previously empty; otherwise we try to remember user selection
+        if _best_subdir:
+            st.session_state.subdir = _best_subdir
+        if _best_version and not getattr(st.session_state, "version", None):
+            st.session_state.version = _best_version
+    try:
+        _subdir_index = _available_subdirs.index(getattr(st.session_state, "subdir", ""))
+    except ValueError:
+        _subdir_index = 0
     subdir = st.selectbox(
         "Select a subdir:",
         options=_available_subdirs,
+        index=_subdir_index,
         key="subdir",
     )
 
@@ -1282,7 +1319,7 @@ if isinstance(data, dict):
                             richtable_data["Package"].append(
                                 "".join(
                                     [
-                                        f"/?q={channel}/{ms.name.source}",
+                                        f"/?q={channel}/{subdir}/{ms.name.source}",
                                         f"&richtable={str(richtable).lower()}"
                                         if richtable
                                         != app_config().render_dependencies_as_table_default
@@ -1348,10 +1385,9 @@ elif data == "show_latest":
         platforms = platforms[1:-1]
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
-        table.append(
-            f"| {n} | <a href='{more_url}' target='_self'>{name}</a>"
-            f"| {version} | {platforms} | {published}"
-        )
+        if richtable != app_config().render_dependencies_as_table_default:
+            more_url += f"&richtable={str(richtable).lower()}"
+        table.append(f"| {n} | [{name}]({more_url}) | {version} | {platforms} | {published} |")
     st.markdown(
         f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
     )
