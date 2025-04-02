@@ -870,8 +870,6 @@ elif url_params["artifact"] and "channel" not in st.session_state:
     # Initialize state from URL params, only on first run
     # These state keys match the sidebar widgets keys below
     st.session_state.channel = url_params["channel"]
-    if url_params["subdir"] is not None:
-        st.session_state.subdir = url_params["subdir"]
     if url_params["package_name"] is not None:
         _package_name = url_params["package_name"]
         if _package_name in get_package_names(url_params["channel"]):
@@ -879,14 +877,27 @@ elif url_params["artifact"] and "channel" not in st.session_state:
             st.session_state._prev_package_name = url_params["package_name"]
         else:
             st.error(f"Package `{_package_name}` not yet available in {url_params['channel']}!")
+    if url_params["with_broken"]:
+        st.session_state.with_broken = url_params["with_broken"]
+    if url_params["subdir"] is not None:
+        if st.session_state.package_name and st.session_state.channel:
+            if url_params["subdir"] in get_arch_subdirs_for_package(
+                st.session_state.package_name,
+                st.session_state.channel,
+                with_broken=url_params.get("with_broken", False),
+            ):
+                st.session_state.subdir = url_params["subdir"]
+            else:
+                st.info(
+                    f"Subdir `{url_params['subdir']}` is not available for "
+                    f"{st.session_state.package_name}. Defaulting to auto-selection."
+                )
     if url_params["version"] is not None:
         st.session_state.version = url_params["version"]
     if url_params["build"] is not None:
         st.session_state.build = url_params["build"]
     if url_params["extension"] is not None:
         st.session_state.extension = url_params["extension"]
-    if url_params["with_broken"]:
-        st.session_state.with_broken = url_params["with_broken"]
     if url_params["richtable"]:
         st.session_state.richtable = url_params["richtable"]
 
@@ -1308,7 +1319,7 @@ if isinstance(data, dict):
                             richtable_data["Package"].append(
                                 "".join(
                                     [
-                                        f"/?q={channel}/{ms.name.source}",
+                                        f"/?q={channel}/{subdir}/{ms.name.source}",
                                         f"&richtable={str(richtable).lower()}"
                                         if richtable
                                         != app_config().render_dependencies_as_table_default
