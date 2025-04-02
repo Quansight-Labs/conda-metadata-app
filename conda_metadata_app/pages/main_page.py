@@ -964,10 +964,14 @@ with st.sidebar:
             st.session_state.subdir = _best_subdir
         if _best_version and not getattr(st.session_state, "version", None):
             st.session_state.version = _best_version
-
+    try:
+        _subdir_index = _available_subdirs.index(getattr(st.session_state, "subdir", ""))
+    except ValueError:
+        _subdir_index = 0
     subdir = st.selectbox(
         "Select a subdir:",
         options=_available_subdirs,
+        index=_subdir_index,
         key="subdir",
     )
 
