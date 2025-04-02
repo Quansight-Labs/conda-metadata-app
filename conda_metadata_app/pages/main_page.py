@@ -843,6 +843,7 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
         "subdir": subdir,
         "artifact": artifact,
         "package_name": package_name,
+        "_prev_package_name": package_name,
         "version": version,
         "build": build,
         "extension": extension,
@@ -875,6 +876,7 @@ elif url_params["artifact"] and "channel" not in st.session_state:
         _package_name = url_params["package_name"]
         if _package_name in get_package_names(url_params["channel"]):
             st.session_state.package_name = url_params["package_name"]
+            st.session_state._prev_package_name = url_params["package_name"]
         else:
             st.error(f"Package `{_package_name}` not yet available in {url_params['channel']}!")
     if url_params["version"] is not None:
@@ -952,6 +954,10 @@ with st.sidebar:
         "Underscore-leading names are sorted last.",
         index=None,  # No choice by default, allows clearing field with (X) button
     )
+    if package_name:
+        st.session_state["_prev_package_name"] = package_name
+    else:
+        package_name = st.session_state.get("_prev_package_name")
     _available_subdirs = get_arch_subdirs_for_package(
         package_name, channel, with_broken=with_broken
     )
