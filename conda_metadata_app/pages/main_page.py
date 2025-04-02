@@ -945,16 +945,30 @@ with st.sidebar:
     )
 
     _available_package_names = get_package_names(channel)
-    # empty string means: show RSS feed
-    package_name = st.selectbox(
-        "Enter a package name:",
-        options=_available_package_names,
-        key="package_name",
-        help=f"Choose one package out of the {len(_available_package_names):,} available ones. "
-        "Underscore-leading names are sorted last.",
-        index=None,  # No choice by default, allows clearing field with (X) button
-    )
-    if package_name:
+    sc1, sc2 = st.columns((5, 1), vertical_alignment="bottom")
+    # All of these extra session state for package names is to handle
+    # a behavior with backspace presses. selectbox returns None on backspace,
+    # which takes us back to the frontpage and reinitializes all the dropdowns.
+    # we have to memo the previous value if non None, and also provide a way to
+    # actually go back home on cleared values (hence the house emoji button)
+    if st.session_state.get("_cleared_package_name"):
+        st.session_state["package_name"] = None
+    with sc1:
+        # empty string means: show RSS feed
+        package_name = st.selectbox(
+            "Enter a package name:",
+            options=_available_package_names,
+            key="package_name",
+            help=f"Choose one package out of the {len(_available_package_names):,} available ones. "
+            "Underscore-leading names are sorted last.",
+            index=None,
+        )
+    with sc2:
+        clear_package_name = st.session_state["_cleared_package_name"] = st.button("🏠")
+    if clear_package_name:
+        st.session_state["_prev_package_name"] = package_name = None
+        st.rerun()
+    elif package_name:
         st.session_state["_prev_package_name"] = package_name
     else:
         package_name = st.session_state.get("_prev_package_name")
