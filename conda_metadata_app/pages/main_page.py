@@ -1385,10 +1385,9 @@ elif data == "show_latest":
         platforms = platforms[1:-1]
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
-        table.append(
-            f"| {n} | <a href='{more_url}' target='_self'>{name}</a>"
-            f"| {version} | {platforms} | {published}"
-        )
+        if richtable != app_config().render_dependencies_as_table_default:
+            more_url += f"&richtable={str(richtable).lower()}"
+        table.append(f"| {n} | [{name}]({more_url}) | {version} | {platforms} | {published} |")
     st.markdown(
         f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
     )
