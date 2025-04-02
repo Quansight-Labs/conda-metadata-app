@@ -958,10 +958,13 @@ with st.sidebar:
     _best_subdir, _best_version = _best_version_in_subdir(
         package_name, channel, with_broken=with_broken
     )
-    if _best_subdir and not getattr(st.session_state, "subdir", None):
-        st.session_state.subdir = _best_subdir
-    if _best_version and not getattr(st.session_state, "version", None):
-        st.session_state.version = _best_version
+    if getattr(st.session_state, "subdir", None):
+        pass # do nothing, leave it as is
+    else:
+        if _best_subdir:
+            st.session_state.subdir = _best_subdir
+        if _best_version and not getattr(st.session_state, "version", None):
+            st.session_state.version = _best_version
 
     subdir = st.selectbox(
         "Select a subdir:",
