@@ -1,4 +1,4 @@
-# please sync the dependencies with pyproject.toml and pixi.toml
+# this file is auto-generated, please make changes in pixi.toml instead
 conda-forge-metadata==0.11.0
 conda-oci-mirror==0.2.3
 conda-package-streaming==0.12.0
