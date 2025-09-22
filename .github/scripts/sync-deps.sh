@@ -4,4 +4,4 @@
 set -euo pipefail
 
 echo "# please sync the dependencies with pyproject.toml and pixi.toml" > requirements.txt
-pixi list --explicit --json | yq -r '.[] | select(.name != "python") | "\(.name)==\(.version)"' >> requirements.txt
+pixi list --explicit --json | jq -r '.[] | select(.name != "python") | "\(.name)==\(.version)"' >> requirements.txt
