@@ -1,5 +1,7 @@
 #:schema ./app_config.schema.json
 enable_filepath_search = true
+enable_filetype_plot = true
+render_dependencies_as_table_default = false
 
 [channels.conda-forge]
 url = "https://conda.anaconda.org/conda-forge"

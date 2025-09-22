@@ -8,4 +8,4 @@ conda-forge-metadata==0.11.0
 conda-package-streaming==0.12.0
 conda-oci-mirror==0.2.3
 streamlit==1.49.1
-streamlit-searchbox==0.1.19
+streamlit-searchbox==0.1.20

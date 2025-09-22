@@ -7,9 +7,11 @@ The metadata can also be listed directly if accessed via a `?q=` URL.
 """
 
 import json
+import mimetypes
 import os
 import re
 import typing
+from collections import defaultdict
 from contextlib import closing
 from datetime import datetime
 from difflib import unified_diff
@@ -20,6 +22,7 @@ from typing import Any
 
 import zstandard as zstd
 from conda_forge_metadata.types import ArtifactData
+from rattler.match_spec import MatchSpec
 from rattler.platform import PlatformLiteral
 from requests.auth import HTTPBasicAuth
 
@@ -33,6 +36,7 @@ from conda_metadata_app.app_config import (
     PackageDiscoveryChoice,
     Secret,
 )
+from conda_metadata_app.version_info import get_version_info
 from conda_metadata_app.version_order import VersionOrder
 
 if not os.environ.get("CACHE_DIR"):
@@ -60,11 +64,81 @@ yaml = YAML(typ="safe")
 yaml.allow_duplicate_keys = True
 yaml.default_flow_style = False
 logger = get_logger(__name__)
+
+
 st.set_page_config(
     page_title="conda metadata browser",
     page_icon="📦",
     initial_sidebar_state="expanded",
+    menu_items={
+        "about": f"""
+        **📦 conda-metadata-app `{get_version_info() or "(Version N/A)"}`**
+
+        Browse metadata from conda packages in conda-forge, bioconda and others.
+        """
+    },
 )
+
+EXTENSION_TO_CATEGORY = {
+    ".a": "Library",
+    ".bat": "Shell",
+    ".cmd": "Shell",
+    ".csh": "Shell",
+    ".dll": "Library",
+    ".dylib": "Library",
+    ".exe": "Executable",
+    ".fish": "Shell",
+    ".go": "Go",
+    ".h": "Headers",
+    ".hpp": "Headers",
+    ".lib": "Library",
+    ".pm": "Perl",
+    ".ps1": "Shell",
+    ".psm1": "Shell",
+    ".pxd": "Cython",
+    ".pxi": "Cython",
+    ".pyd": "Library",
+    ".pyi": "Python",
+    ".pyo": "Python",
+    ".pyw": "Python",
+    ".pyx": "Cython",
+    ".r": "R",
+    ".rda": "R",
+    ".rdb": "R",
+    ".rds": "R",
+    ".rdx": "R",
+    ".rmd": "R",
+    ".rs": "Rust",
+    ".sh": "Shell",
+    ".so": "Library",
+    ".xsh": "Shell",
+    ".zsh": "Shell",
+}
+MIMETYPE_TO_CATEGORY = {
+    None: "Other",
+    "application/java-vm": "Java",
+    "application/javascript": "JavaScript",
+    "application/json": "JSON",
+    "application/octet-stream": "Binary",
+    "application/pdf": "PDF",
+    "application/vnd.ms-fontobject": "Fonts",
+    "application/x-font-type1": "Fonts",
+    "application/x-python-code": "Python",
+    "application/x-tar": "Archives",
+    "application/x-tcl": "TCL",
+    "application/x-tgif": "Multimedia",
+    "application/xml": "XML",
+    "application/zip": "Archives",
+    "text/css": "CSS",
+    "text/csv": "CSV",
+    "text/html": "HTML",
+    "text/markdown": "Markdown",
+    "text/plain": "Text",
+    "text/x-c": "C",
+    "text/x-fortran": "Fortran",
+    "text/x-perl": "Perl",
+    "text/x-python": "Python",
+}
 
 
 def bar_esc(s: str) -> str:
@@ -191,7 +265,7 @@ def get_all_packages_sections_from_repodata(
             sections.update(repodata[key])
 
     if with_broken:
-        for removed_artifact in get_repodata(channel, arch_subdir).get("removed", []):
+        for removed_artifact in get_repodata(channel_name, arch_subdir).get("removed", []):
             removed_artifact: str
 
             if removed_artifact.endswith(".tar.bz2"):
@@ -240,13 +314,19 @@ def provenance_urls(package_name: str, channel: str, data: dict | None = None) -
     if not package_name or not data:
         return [""]
     if data is not None:
-        remote_url = data.get("rendered_recipe", {}).get("extra", {}).get("remote_url")
-        if remote_url:
+        if extra := data.get("rendered_recipe", {}).get("extra", {}):  # meta.yaml
+            pass
+        elif extra := data.get("about", {}).get("extra", {}):  # recipe.yaml
+            pass
+        else:
+            logger.warning("Did not find extra metadata section")
+        remote_url = extra.get("remote_url")
+        if remote_url := extra.get("remote_url"):
             if remote_url.startswith("git@github.com:"):
                 remote_url = remote_url.replace("git@github.com:", "https://github.com/")
                 if remote_url.endswith(".git"):
                     remote_url = remote_url[:-4]
-            sha = data.get("rendered_recipe", {}).get("extra", {}).get("sha")
+            sha = extra.get("sha")
             if sha and remote_url.startswith("https://github.com/"):
                 return [f"{remote_url}/commit/{sha}"]
             return remote_url
@@ -591,6 +671,40 @@ def _is_broken(
     raise RuntimeError("Invalid artifact discovery choice. This is an implementation error.")
 
 
+def _categorize_path(path: str) -> str:
+    ext = os.path.splitext(path)[1].lower()
+    components = path.split("/")
+    if not ext and "bin" in components[:-1]:
+        return "Executable"
+    if category := EXTENSION_TO_CATEGORY.get(ext):
+        return category
+    mimetype, _ = mimetypes.guess_type(path)
+    if category := MIMETYPE_TO_CATEGORY.get(mimetype):
+        return category
+    first, second = mimetype.split("/")
+    if first == "font":
+        return "Fonts"
+    if first in ("image", "audio", "video"):
+        return "Multimedia"
+    if ".so." in components[-1]:
+        return "Library"
+    if not ext and "LICENSE" in components[-1]:
+        return "Text"
+    if components[0] == "man" and ext[1:].isdigit():
+        return "Text"
+    return mimetype
+
+
+def _content_analysis_plot(paths: list[str]):
+    if not app_config().enable_filetype_plot:
+        return
+    counter = defaultdict(int)
+    for path in paths:
+        counter[_categorize_path(path)] += 1
+    counter = dict(sorted(counter.items(), key=lambda kv: kv[1], reverse=True))
+    return st.bar_chart([counter], horizontal=True, stack="normalize")
+
+
 def patched_repodata(channel: str, subdir: str, artifact: str) -> tuple[dict, bool]:
     """
     This function assumes that the artifact discovery mode for the channel is "anaconda".
@@ -644,6 +758,18 @@ def is_archived_repo(repo_url_or_owner_repo) -> bool:
     return False
 
 
+def artifact_size(url) -> str:
+    size = 0
+    with requests.get(url, stream=True) as r:
+        if r.ok:
+            size = int(r.headers.get("Content-length", 0))
+    for unit in ("", "Ki", "Mi", "Gi"):
+        if abs(size) < 1024.0:
+            return f"{size:3.1f}{unit}B"
+        size /= 1024.0
+    return f"{size:.1f}TiB"
+
+
 def parse_url_params() -> tuple[dict[str, Any], bool]:
     """
     Allowed query params:
@@ -652,14 +778,18 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
     - q: channel/subdir::package_name-version-build
     - q: channel/subdir/package_name-version-build.extension
     - with_broken: true or false
+    - richtable: true or false
     """
     channel, subdir, artifact, package_name, version, build, extension = [None] * 7
     with_broken = False
+    richtable = app_config().render_dependencies_as_table_default
     path = None
     url_params = st.query_params.to_dict()
     ok = True
     if "with_broken" in url_params:
         with_broken = url_params.pop("with_broken") == "true"
+    if "richtable" in url_params:
+        richtable = url_params.pop("richtable") == "true"
     if "q" in url_params:
         query = url_params["q"]
         if query in app_config().channels:  # channel only
@@ -713,11 +843,13 @@ def parse_url_params() -> tuple[dict[str, Any], bool]:
         "subdir": subdir,
         "artifact": artifact,
         "package_name": package_name,
+        "_prev_package_name": package_name,
         "version": version,
         "build": build,
         "extension": extension,
         "path": path,
         "with_broken": with_broken,
+        "richtable": richtable,
     }, ok
 
 
@@ -738,22 +870,36 @@ elif url_params["artifact"] and "channel" not in st.session_state:
     # Initialize state from URL params, only on first run
     # These state keys match the sidebar widgets keys below
     st.session_state.channel = url_params["channel"]
-    if url_params["subdir"] is not None:
-        st.session_state.subdir = url_params["subdir"]
     if url_params["package_name"] is not None:
         _package_name = url_params["package_name"]
         if _package_name in get_package_names(url_params["channel"]):
             st.session_state.package_name = url_params["package_name"]
+            st.session_state._prev_package_name = url_params["package_name"]
         else:
             st.error(f"Package `{_package_name}` not yet available in {url_params['channel']}!")
+    if url_params["with_broken"]:
+        st.session_state.with_broken = url_params["with_broken"]
+    if url_params["subdir"] is not None:
+        if st.session_state.package_name and st.session_state.channel:
+            if url_params["subdir"] in get_arch_subdirs_for_package(
+                st.session_state.package_name,
+                st.session_state.channel,
+                with_broken=url_params.get("with_broken", False),
+            ):
+                st.session_state.subdir = url_params["subdir"]
+            else:
+                st.info(
+                    f"Subdir `{url_params['subdir']}` is not available for "
+                    f"{st.session_state.package_name}. Defaulting to auto-selection."
+                )
     if url_params["version"] is not None:
         st.session_state.version = url_params["version"]
     if url_params["build"] is not None:
         st.session_state.build = url_params["build"]
     if url_params["extension"] is not None:
         st.session_state.extension = url_params["extension"]
-    if url_params["with_broken"]:
-        st.session_state.with_broken = url_params["with_broken"]
+    if url_params["richtable"]:
+        st.session_state.richtable = url_params["richtable"]
 
 _patched_metadata_channels = [
     channel
@@ -791,6 +937,13 @@ with st.sidebar:
         help="If the source feedstock is archived, the text will be struck through. "
         "Requires extra API calls. Slow! Only for conda-forge",
     )
+    richtable = st.checkbox(
+        "Show dependencies as rich table",
+        value=app_config().render_dependencies_as_table_default,
+        key="richtable",
+        help="Render dependencies (and constraints) as a table with links to the package names",
+    )
+
     _all_channels = list(app_config().channels.keys())
     channel = st.selectbox(
         "Select a channel:",
@@ -802,30 +955,54 @@ with st.sidebar:
         else 0,
     )
 
-    _available_package_names = [""] + get_package_names(
-        channel
-    )  # empty string means: show RSS feed
-    package_name = st.selectbox(
-        "Enter a package name:",
-        options=_available_package_names,
-        key="package_name",
-        help=f"Choose one package out of the {len(_available_package_names) - 1:,} available ones. "
-        "Underscore-leading names are sorted last.",
-    )
+    _available_package_names = get_package_names(channel)
+    sc1, sc2 = st.columns((5, 1), vertical_alignment="bottom")
+    # All of these extra session state for package names is to handle
+    # a behavior with backspace presses. selectbox returns None on backspace,
+    # which takes us back to the frontpage and reinitializes all the dropdowns.
+    # we have to memo the previous value if non None, and also provide a way to
+    # actually go back home on cleared values (hence the house emoji button)
+    if st.session_state.get("_cleared_package_name"):
+        st.session_state["package_name"] = None
+    with sc1:
+        # empty string means: show RSS feed
+        package_name = st.selectbox(
+            "Enter a package name:",
+            options=_available_package_names,
+            key="package_name",
+            help=f"Choose one package out of the {len(_available_package_names):,} available ones. "
+            "Underscore-leading names are sorted last.",
+            index=None,
+        )
+    with sc2:
+        clear_package_name = st.session_state["_cleared_package_name"] = st.button("🏠")
+    if clear_package_name:
+        st.session_state["_prev_package_name"] = package_name = None
+        st.rerun()
+    elif package_name:
+        st.session_state["_prev_package_name"] = package_name
+    else:
+        package_name = st.session_state.get("_prev_package_name")
     _available_subdirs = get_arch_subdirs_for_package(
         package_name, channel, with_broken=with_broken
     )
     _best_subdir, _best_version = _best_version_in_subdir(
         package_name, channel, with_broken=with_broken
     )
-    if _best_subdir and not getattr(st.session_state, "subdir", None):
-        st.session_state.subdir = _best_subdir
-    if _best_version and not getattr(st.session_state, "version", None):
-        st.session_state.version = _best_version
-
+    if not getattr(st.session_state, "subdir", None):
+        # Only choose "best" if previously empty; otherwise we try to remember user selection
+        if _best_subdir:
+            st.session_state.subdir = _best_subdir
+        if _best_version and not getattr(st.session_state, "version", None):
+            st.session_state.version = _best_version
+    try:
+        _subdir_index = _available_subdirs.index(getattr(st.session_state, "subdir", ""))
+    except ValueError:
+        _subdir_index = 0
     subdir = st.selectbox(
         "Select a subdir:",
         options=_available_subdirs,
+        index=_subdir_index,
         key="subdir",
     )
 
@@ -892,6 +1069,22 @@ def disable_button(query):
     return True
 
 
+def build_richtable(data, **kwargs):
+    return st.dataframe(
+        data,
+        use_container_width=True,
+        hide_index=False,
+        column_config={
+            "Package": st.column_config.LinkColumn(
+                display_text=r"[/#]\?q=\S+/([^&]+)",
+            ),
+        },
+        selection_mode="single-column",
+        row_height=35,
+        **kwargs,
+    )
+
+
 c1, c2 = st.columns([1, 0.15])
 with c1:
     query = st.text_input(
@@ -916,9 +1109,16 @@ if submitted or all([channel, subdir, package_name, version, build]):
     channel, subdir = channel_subdir.rsplit("/", 1)
     st.query_params.clear()
     st.query_params.q = f"{channel}/{subdir}/{artifact}"
+    if richtable != app_config().render_dependencies_as_table_default:
+        st.query_params.richtable = str(richtable).lower()
     if with_broken:
         st.query_params.with_broken = str(with_broken).lower()
     with st.spinner("Fetching metadata..."):
+        if artifact.startswith("_") and artifact.endswith(".tar.bz2"):
+            # TarBz2 artifacts come from the OCI mirror, which can't host
+            # artifacts starting with `_`. Those packages are prepended with
+            # zzz_ instead.
+            artifact = f"zzz{artifact}"
         data = artifact_metadata(
             channel=channel,
             subdir=subdir,
@@ -995,7 +1195,7 @@ if isinstance(data, dict):
         patched_data = {}
         yanked = _is_broken(package_name, subdir, version, build, extension, channel)
 
-    st.markdown(f'## {"❌ " if yanked else ""}{data["name"]} {data["version"]}')
+    st.markdown(f"## {'❌ ' if yanked else ''}{data['name']} {data['version']}")
     if yanked:
         st.error("This artifact has been removed from the index and is only available via URL.")
     about = data.get("about") or data.get("rendered_recipe", {}).get("about", {})
@@ -1026,11 +1226,24 @@ if isinstance(data, dict):
             build_string=build_str,
             extension=extension,
         )
-        download = f"[artifact download]({_download_url})"
+        download = f"[download]({_download_url})"
     maintainers = []
-    for user in (
-        data.get("rendered_recipe", {}).get("extra", {}).get("recipe-maintainers", ["*N/A*"])
-    ):
+    rendered_recipe = data.get("rendered_recipe", {})
+    if recipe := rendered_recipe.get("recipe"):  # recipe.yaml
+        recipe_format = f"recipe.yaml v{recipe.get('schema_version', 1)}"
+        rattler_build_version = rendered_recipe.get("system_tools").get("rattler-build", "")
+        built_with = f"`rattler-build {rattler_build_version}`"
+    else:
+        recipe_format = "meta.yaml"
+        conda_build_version = data.get("about", {}).get("conda_build_version", "")
+        conda_version = data.get("about", {}).get("conda_version", "")
+        built_with = "N/A"
+        if conda_build_version:
+            built_with = f"`conda-build {conda_build_version}`"
+        if conda_version:
+            built_with += f", `conda {conda_version}`"
+    extra = rendered_recipe.get("extra", {}) or recipe.get("extra", {})
+    for user in extra.get("recipe-maintainers", ["*N/A*"]):
         if user == "*N/A*":
             maintainers.append(user)
         elif "/" in user:  # this is a team
@@ -1059,44 +1272,94 @@ if isinstance(data, dict):
             | `{channel}` | `{subdir}` | `{bar_esc(build_str)}` | `{extension}` |
             | **License** | **Uploaded** | **Maintainers** | **Provenance** |
             | `{bar_esc(about.get("license", "*N/A*"))}` | {uploaded} | {maintainers} | {provenance} |
-            | **Links:** | {download} | {project_urls} | {dashboard_markdown_links} |
+            | **Recipe:** | `{recipe_format}` | **Built with**: | {built_with} |
+            | **Links:** | {download} ({artifact_size(_download_url)}) | {project_urls} | {dashboard_markdown_links} |
             """
         )
     )
     st.markdown(" ")
     dependencies = data.get("index", {}).get("depends", ())
     constraints = data.get("index", {}).get("constrains", ())
-    run_exports = data.get("rendered_recipe", {}).get("build", {}).get("run_exports", ())
-    if dependencies or constraints or run_exports:
-        c1, c2 = st.columns([1, 1])
-        for title, key, specs, col in [
-            ("Dependencies", "depends", dependencies, c1),
-            ("Constraints", "constrains", constraints, c2),
-        ]:
-            if specs:
-                with col:
-                    st.write(f"### {title}")
-                    patched_specs = patched_data.get(key, {})
-                    if patched_specs:
-                        specs = list(unified_diff(specs, patched_specs, n=100))[3:]
-                    specs = "\n".join([s.strip() for s in specs])
-                    st.code(specs, language="diff", line_numbers=True)
-        if run_exports:
-            with c2:
-                st.write("### Run exports")
-                if not hasattr(run_exports, "items"):
-                    run_exports = {"weak": run_exports}
-                memfile = StringIO()
-                yaml.dump(run_exports, memfile)
-                memfile.seek(0)
-                st.code(memfile.getvalue(), language="yaml", line_numbers=True)
+    if recipe:
+        # v1
+        run_exports = (
+            rendered_recipe.get("finalized_dependencies", {}).get("run", {}).get("run_exports", {})
+        )
+    else:
+        # v0
+        run_exports = rendered_recipe.get("build", {}).get("run_exports", {})
 
+    if richtable:
+        c1 = c2 = st.container()
+    else:
+        c1, c2 = st.columns(2)
+    for title, key, specs, col in [
+        ("Dependencies", "depends", dependencies, c1),
+        ("Constraints", "constrains", constraints, c2),
+        ("Run exports", "run_exports", run_exports, c2),
+    ]:
+        if specs:
+            if key in ("depends", "constrains"):
+                patched_specs = patched_data.get(key, {})
+                if patched_specs:
+                    specs = list(unified_diff(specs, patched_specs, n=100))[3:]
+                specs = {"_": specs}  # Just to unify interface with run_exports
+            else:
+                if not hasattr(specs, "items"):
+                    specs = {"weak": specs}
+            with col:
+                st.write(f"### {title} ({sum([len(s) for s in specs.values()])})")
+                if richtable:
+                    richtable_data = {"Package": [], "Version": [], "Build": []}
+                    if key == "run_exports":
+                        richtable_data["Type"] = []
+                    for typ, speclist in specs.items():
+                        for spec in speclist:
+                            ms = MatchSpec(spec)
+                            richtable_data["Package"].append(
+                                "".join(
+                                    [
+                                        f"/?q={channel}/{subdir}/{ms.name.source}",
+                                        f"&richtable={str(richtable).lower()}"
+                                        if richtable
+                                        != app_config().render_dependencies_as_table_default
+                                        else "",
+                                        f"{'&with_broken=true' if with_broken else ''}",
+                                    ]
+                                )
+                            )
+                            richtable_data["Version"].append(ms.version or "")
+                            richtable_data["Build"].append(ms.build or "")
+                            if key == "run_exports":
+                                richtable_data["Type"].append(typ)
+                    build_richtable(richtable_data)
+                else:
+                    if key == "run_exports":
+                        memfile = StringIO()
+                        yaml.dump(specs, memfile)
+                        memfile.seek(0)
+                        st.code(memfile.getvalue(), language="yaml", line_numbers=True)
+                    else:
+                        specs = "\n".join([s.strip() for s in specs["_"]])
+                        st.code(specs, language="diff", line_numbers=True)
         st.markdown(" ")
 
     if data.get("files"):
-        st.write("### Files")
-        all_files = "\n".join(data["files"])
-        st.code(all_files, language="text", line_numbers=True)
+        st.write(f"### Files ({len(data['files']):,})")
+        _content_analysis_plot(data["files"])
+        if (n_files := len(data["files"])) > 10000:
+            st.info(
+                f"Too many files ({n_files:,}). Showing only first 10K. "
+                "Check raw JSON below for full list.",
+                icon="ℹ️",
+            )
+        all_files = "\n".join(data["files"][:10000])
+        st.code(
+            all_files,
+            language="text",
+            line_numbers=True,
+            height=23 * min([25, len(data["files"]) + 1]),
+        )
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
@@ -1122,12 +1385,14 @@ elif data == "show_latest":
         platforms = platforms[1:-1]
         published = item.find("pubDate").text
         more_url = f"/?q={channel}/{name}"
-        table.append(f"| {n} | [{name}]({more_url})| {version} | {platforms} | {published}")
+        if richtable != app_config().render_dependencies_as_table_default:
+            more_url += f"&richtable={str(richtable).lower()}"
+        table.append(f"| {n} | [{name}]({more_url}) | {version} | {platforms} | {published} |")
     st.markdown(
         f"## Latest {n} updates in [{channel}](https://anaconda.org/{channel.split('/', 1)[-1]})"
     )
     st.markdown(f"> Last update: {rss_ret.find('channel/pubDate').text}.")
-    st.markdown("\n".join(table))
+    st.markdown("\n".join(table), unsafe_allow_html=True)
 elif isinstance(data, str) and data.startswith("error:"):
     st.error(data[6:])
 elif not data:

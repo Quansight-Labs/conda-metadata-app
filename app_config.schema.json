@@ -137,16 +137,10 @@
                 "anyOf": [
                   {
                     "const": "conda",
-                    "enum": [
-                      "conda"
-                    ],
                     "type": "string"
                   },
                   {
                     "const": "tar.bz2",
-                    "enum": [
-                      "tar.bz2"
-                    ],
                     "type": "string"
                   }
                 ]
@@ -354,6 +348,18 @@
       "default": true,
       "description": "Whether to enable the file path search feature.\nThe file path search feature sends information about your query to an API provided by Quansight.",
       "title": "Enable Filepath Search",
+      "type": "boolean"
+    },
+    "enable_filetype_plot": {
+      "default": true,
+      "description": "Whether to enable Altair charts to plot a basic path-based analysis of the files included in\neach artifact.",
+      "title": "Enable Filetype Plot",
+      "type": "boolean"
+    },
+    "render_dependencies_as_table_default": {
+      "default": false,
+      "description": "Whether to use `st.dataframe` representations to render the dependencies and constraints\nblocks, providing links to the mentioned package names. This is just the default option,\nusers can still override in the application.",
+      "title": "Render Dependencies As Table Default",
       "type": "boolean"
     }
   },

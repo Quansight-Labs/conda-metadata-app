@@ -10,6 +10,7 @@ platforms = ["linux-64", "win-64", "osx-arm64", "osx-64", "linux-aarch64"]
 dev = "python -m streamlit run --server.runOnSave=true app.py"
 deploy = "python -m streamlit run --server.headless=true --global.developmentMode=false app.py"
 schema = "python -m conda_metadata_app.app_config"
+save-version-info = "python -m conda_metadata_app.version_info"
 postinstall-production = "pip install --no-deps --disable-pip-version-check dist/conda_metadata_app-*.whl"
 
 
@@ -24,8 +25,8 @@ py-rattler = ">=0.7.0,<0.8"
 conda-forge-metadata = ">=0.11.0,<0.12"
 conda-package-streaming = ">=0.12.0,<0.13"
 conda-oci-mirror = ">=0.2.3,<0.3"
-streamlit = ">=1.39.0,<2"
-streamlit-searchbox = "==0.1.19"
+streamlit = ">=1.44.0,<2"
+streamlit-searchbox = "==0.1.20"
 
 [host-dependencies]
 pip = "*"
