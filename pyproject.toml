@@ -24,10 +24,10 @@ dependencies = [
   "zstandard>=0.23.0,<0.24",
   "py-rattler>=0.7.0,<0.8",
   "conda-forge-metadata>=0.11.0,<0.12",
-  "conda-oci-mirror@git+https://github.com/channel-mirrors/conda-oci-mirror.git#egg=25ea3e436f0b0bc5a9c646121efafc9c68e116cd",  # v0.1.0
+  "conda-package-streaming>=0.12.0,<0.13",
+  "conda-oci-mirror>=0.2.3,<0.3",  # v0.1.0
   "streamlit>=1.39.0,<2",
   "streamlit-searchbox==0.1.19",
-  "setuptools",
 ]
 
 [project.urls]
