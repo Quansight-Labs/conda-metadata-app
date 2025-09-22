@@ -19,7 +19,7 @@ jobs:
           run-install: false
       - name: Update lockfile
         run: |
-          pixi update --json --no-install --exclude python | pixi exec pixi-diff-to-markdown >> diff.md
+          pixi update --json --no-install | pixi exec pixi-diff-to-markdown >> diff.md
       - name: Sync to requirements.txt
         run: ./.github/scripts/sync-deps.sh
       - name: Create pull request
@@ -36,6 +36,5 @@ jobs:
             dependencies
           delete-branch: true
           add-paths: |
-            pixi.toml
             pixi.lock
             requirements.txt
