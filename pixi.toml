@@ -14,7 +14,7 @@ save-version-info = "python -m conda_metadata_app.version_info"
 postinstall-production = "pip install --no-deps --disable-pip-version-check dist/conda_metadata_app-*.whl"
 
 
-# please sync the dependencies with pyproject.toml and requirements.txt
+# please sync the dependencies with pyproject.toml
 [dependencies]
 python = "3.12.*"
 pydantic-settings = ">=2.4.0,<3"
