@@ -1,11 +1,12 @@
-# please sync the dependencies with pyproject.toml and pixi.toml
-pydantic-settings==2.10.1
-pydantic==2.11.9
-typing-extensions==4.15.0
-zstandard==0.23.0
-py-rattler==0.7.2
+# this file is auto-generated, please make changes in pixi.toml instead
 conda-forge-metadata==0.11.0
-conda-package-streaming==0.12.0
 conda-oci-mirror==0.2.3
+conda-package-streaming==0.12.0
+pip==25.2
+py-rattler==0.7.2
+pydantic==2.11.9
+pydantic-settings==2.10.1
 streamlit==1.49.1
 streamlit-searchbox==0.1.20
+typing-extensions==4.15.0
+zstandard==0.23.0

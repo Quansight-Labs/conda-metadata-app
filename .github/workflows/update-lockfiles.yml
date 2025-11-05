@@ -1,0 +1,40 @@
+name: Update lockfiles
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 7 5 1 * * # each 1st at 05:07 UTC
+
+jobs:
+  pixi-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Set up pixi
+        uses: prefix-dev/setup-pixi@fef5c9568ca6c4ff7707bf840ab0692ba3f08293 # v0.9.0
+        with:
+          run-install: false
+      - name: Update lockfile
+        run: |
+          pixi update --json --no-install | pixi exec pixi-diff-to-markdown >> diff.md
+      - name: Sync to requirements.txt
+        run: ./.github/scripts/sync-deps.sh
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update dependencies
+          title: Update dependencies
+          body-path: diff.md
+          branch: update-pixi
+          base: main
+          labels: |
+            pixi
+            dependencies
+          delete-branch: true
+          add-paths: |
+            pixi.lock
+            requirements.txt

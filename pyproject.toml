@@ -16,7 +16,6 @@ classifiers = [
 ]
 requires-python = ">=3.12"
 
-# please sync the dependencies with pixi.toml and requirements.txt
 dependencies = [
   "pydantic-settings>=2.4.0,<3",
   "pydantic>=2.8.2,<3",
