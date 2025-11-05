@@ -299,7 +299,9 @@ def repodata_patches(channel_name: str) -> dict[str, Any]:
     package_name = f"{channel_name}-repodata-patches"
     data = anaconda_api_data(package_name, channel_name)
     most_recent = sorted(data, key=lambda x: x["attrs"]["timestamp"], reverse=True)[0]
-    filename, conda = conda_reader_for_url(f"https:{most_recent['download_url']}")
+    filename, conda = conda_reader_for_url(
+        f"https:{most_recent['download_url']}", fall_back_to_full_download=True
+    )
 
     patches = {}
     with closing(conda):
