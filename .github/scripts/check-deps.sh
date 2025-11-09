@@ -13,7 +13,7 @@ while read -r dependency; do
         echo "${dependency} not found in pyproject.toml"
         contains_dependency_all=false
     fi
-done < <(yq -r '.dependencies | to_entries | .[] | select(.key != "python" && .key != "pip") | "\(.key)\(.value)"' pixi.toml)
+done < <(yq -r '.dependencies | to_entries | .[] | select(.key != "python") | select(.key != "pip") | "\(.key)\(.value)"' pixi.toml)
 
 if [[ $contains_dependency_all == "false" ]]; then
     exit 1
