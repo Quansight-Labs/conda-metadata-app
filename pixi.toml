@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "conda-metadata-app"
 version = "0.1.0"
 description = "A streamlit app to query metadata from conda packages"
@@ -13,22 +13,19 @@ schema = "python -m conda_metadata_app.app_config"
 save-version-info = "python -m conda_metadata_app.version_info"
 postinstall-production = "pip install --no-deps --disable-pip-version-check dist/conda_metadata_app-*.whl"
 
-
 [dependencies]
 python = "3.12.*"
+pip = "*"
 pydantic-settings = ">=2.4.0,<3"
 pydantic = ">=2.8.2,<3"
 typing-extensions = ">=4.12.2,<5"
 zstandard = ">=0.23.0,<0.24"
 py-rattler = ">=0.7.0,<0.8"
-conda-forge-metadata = ">=0.11.0,<0.12"
+conda-forge-metadata = ">=0.12.0,<0.13"
 conda-package-streaming = ">=0.12.0,<0.13"
 conda-oci-mirror = ">=0.2.3,<0.3"
 streamlit = ">=1.44.0,<2"
 streamlit-searchbox = "==0.1.20"
-
-[host-dependencies]
-pip = "*"
 
 [feature.build.dependencies]
 python-build = "*"
@@ -41,6 +38,7 @@ build-wheel = "python -m build --no-isolation --wheel ."
 pixi-pycharm = ">=0.0.6,<0.0.7"
 
 [environments]
-default = []    # includes default feature
+# includes default feature
+default = []
 build = ["build"]
 dev = { features = ["dev"], no-default-feature = true }
