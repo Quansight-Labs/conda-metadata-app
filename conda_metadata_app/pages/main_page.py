@@ -1094,7 +1094,16 @@ with c1:
         placeholder="channel/subdir::package_name-version-build.ext",
         value=input_value_so_far(),
         label_visibility="collapsed",
-        key="query_input",
+        # # #
+        # This fixes a regression in streamlit 1.50; see
+        # https://github.com/Quansight-Labs/conda-metadata-app/issues/52
+        # We can't use a key in this text_input field, I guess due to this
+        # changelog entry:
+        # > To prevent widgets from resetting when you change a parameter,
+        # > widgets are transitioning to an identity based only on
+        # > their keys (if provided).
+        # # #
+        # key="REMOVED",
         disabled=True,
     )
 with c2:
