@@ -1233,7 +1233,7 @@ if isinstance(data, dict):
     rendered_recipe = data.get("rendered_recipe", {})
     if recipe := rendered_recipe.get("recipe"):  # recipe.yaml
         recipe_format = f"recipe.yaml v{recipe.get('schema_version', 1)}"
-        rattler_build_version = rendered_recipe.get("system_tools").get("rattler-build", "")
+        rattler_build_version = rendered_recipe.get("system_tools", {}).get("rattler-build", "")
         built_with = f"`rattler-build {rattler_build_version}`"
     else:
         recipe_format = "meta.yaml"
@@ -1244,7 +1244,7 @@ if isinstance(data, dict):
             built_with = f"`conda-build {conda_build_version}`"
         if conda_version:
             built_with += f", `conda {conda_version}`"
-    extra = rendered_recipe.get("extra", {}) or recipe.get("extra", {})
+    extra = rendered_recipe.get("extra", {}) or (recipe and recipe.get("extra", {})) or {}
     for user in extra.get("recipe-maintainers", ["*N/A*"]):
         if user == "*N/A*":
             maintainers.append(user)
