@@ -1356,7 +1356,7 @@ if isinstance(data, dict):
         st.markdown(" ")
 
     _channel_url = str(get_channel_config(channel).url)
-    st.write("### More info using [pixi-browse](https://github.com/pavelzw/pixi-browse)")
+    st.write("#### Browse locally with [pixi-browse](https://github.com/pavelzw/pixi-browse)")
     st.code(
         f'pixi exec pixi-browse -c {_channel_url} --matchspec "{data["name"]}=={data["version"]}={build_str}"',
         language="bash",
