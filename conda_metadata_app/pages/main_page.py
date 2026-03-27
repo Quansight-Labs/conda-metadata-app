@@ -1355,13 +1355,6 @@ if isinstance(data, dict):
                         st.code(specs, language="diff", line_numbers=True)
         st.markdown(" ")
 
-    _channel_url = str(get_channel_config(channel).url)
-    st.write("#### Browse locally with [pixi-browse](https://github.com/pavelzw/pixi-browse)")
-    st.code(
-        f'pixi exec pixi-browse -c {_channel_url} --matchspec "{data["name"]}=={data["version"]}={build_str}"',
-        language="bash",
-    )
-
     if data.get("files"):
         st.write(f"### Files ({len(data['files']):,})")
         _content_analysis_plot(data["files"])
@@ -1381,6 +1374,13 @@ if isinstance(data, dict):
 
     st.write("### Raw JSON")
     st.json(data, expanded=False)
+
+    _channel_url = str(get_channel_config(channel).url)
+    st.write("#### Browse locally with [pixi-browse](https://github.com/pavelzw/pixi-browse)")
+    st.code(
+        f'pixi exec pixi-browse -c {_channel_url} --matchspec "{data["name"]}=={data["version"]}={build_str}"',
+        language="bash",
+    )
 elif data == "show_latest":
     try:
         rss_ret = rss_data(channel)
