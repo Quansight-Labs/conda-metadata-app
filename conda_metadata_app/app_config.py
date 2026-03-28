@@ -98,8 +98,10 @@ class PackageFilter(BaseModel):
         if not self.allowed_names and not self.allowed_prefixes:
             return package_names
         return filter(
-            lambda package_name: package_name in self.allowed_names
-            or any(package_name.startswith(prefix) for prefix in self.allowed_prefixes),
+            lambda package_name: (
+                package_name in self.allowed_names
+                or any(package_name.startswith(prefix) for prefix in self.allowed_prefixes)
+            ),
             package_names,
         )
 
