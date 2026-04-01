@@ -13,13 +13,20 @@ import requests
 import streamlit as st
 from streamlit_searchbox import st_searchbox
 
+from conda_metadata_app.app_config import AppConfig
+
+
+@st.cache_resource
+def app_config() -> AppConfig:
+    return AppConfig()
+
 
 @st.cache_resource(ttl="15m", max_entries=100)
 def autocomplete_paths(query):
     time.sleep(0.25)
     try:
         r = requests.get(
-            "https://cforge.quansight.dev/path_to_artifacts/find_files.json",
+            f"{app_config().conda_forge_paths_url}/path_to_artifacts/find_files.json",
             params={"path": query},
         )
     except Exception as exc:
@@ -39,7 +46,7 @@ def autocomplete_paths(query):
 
 def find_artifacts_by_path(path):
     r = requests.get(
-        "https://cforge.quansight.dev/path_to_artifacts/find_artifacts.json",
+        f"{app_config().conda_forge_paths_url}/path_to_artifacts/find_artifacts.json",
         params={"path": path},
     )
     r.raise_for_status()

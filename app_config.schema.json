@@ -346,9 +346,17 @@
     },
     "enable_filepath_search": {
       "default": true,
-      "description": "Whether to enable the file path search feature.\nThe file path search feature sends information about your query to an API provided by Quansight.",
+      "description": "Whether to enable the file path search feature.\nThe file path search feature sends information about your query to an API provided by\na datasette deployment of Quansight-Labs/conda-forge-paths.",
       "title": "Enable Filepath Search",
       "type": "boolean"
+    },
+    "conda_forge_paths_url": {
+      "default": "https://conda-db.openteams.ai",
+      "description": "URL to the datasette deployment of Quansight-Labs/conda-forge-paths.",
+      "format": "uri",
+      "minLength": 1,
+      "title": "Conda Forge Paths Url",
+      "type": "string"
     },
     "enable_filetype_plot": {
       "default": true,
