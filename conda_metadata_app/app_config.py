@@ -390,7 +390,13 @@ class AppConfig(BaseSettings):
     enable_filepath_search: bool = True
     """
     Whether to enable the file path search feature.
-    The file path search feature sends information about your query to an API provided by Quansight.
+    The file path search feature sends information about your query to an API provided by
+    a datasette deployment of Quansight-Labs/conda-forge-paths.
+    """
+
+    conda_forge_paths_url: AnyHttpUrl = "https://conda-db.openteams.ai"
+    """
+    URL to the datasette deployment of Quansight-Labs/conda-forge-paths.
     """
 
     enable_filetype_plot: bool = True
