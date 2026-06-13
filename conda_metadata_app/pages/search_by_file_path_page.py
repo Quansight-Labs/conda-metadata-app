@@ -16,8 +16,8 @@ from streamlit_searchbox import st_searchbox
 
 from conda_metadata_app.app_config import AppConfig
 
-
 logger = logging.getLogger(__name__)
+
 
 @st.cache_resource
 def app_config() -> AppConfig:

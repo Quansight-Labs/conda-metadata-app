@@ -11,10 +11,7 @@ import streamlit as st
 
 from conda_metadata_app.app_config import AppConfig
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
 pages_dir = Path(__file__).parent / "pages"
 
