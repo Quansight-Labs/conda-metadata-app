@@ -6,6 +6,7 @@ The code and data for the Datassette instance can be found at
 https://github.com/Quansight-Labs/conda-forge-paths.
 """
 
+import logging
 import time
 from inspect import cleandoc
 
@@ -15,6 +16,8 @@ from streamlit_searchbox import st_searchbox
 
 from conda_metadata_app.app_config import AppConfig
 
+
+logger = logging.getLogger(__name__)
 
 @st.cache_resource
 def app_config() -> AppConfig:
@@ -30,6 +33,7 @@ def autocomplete_paths(query):
             params={"path": query},
         )
     except Exception as exc:
+        logger.debug("Autocomplete exception. Query: %s", query, exc_info=exc)
         data = {"ok": False, "error": str(exc), "title": exc.__class__.__name__}
     else:
         data = r.json()

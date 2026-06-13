@@ -4,11 +4,17 @@ the automatic pages/ subpages. Instead, we need to define the
 pages manually.
 """
 
+import logging
 from pathlib import Path
 
 import streamlit as st
 
 from conda_metadata_app.app_config import AppConfig
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 pages_dir = Path(__file__).parent / "pages"
 
