@@ -29,7 +29,8 @@ def autocomplete_paths(query):
     time.sleep(0.25)
     try:
         r = requests.get(
-            f"{app_config().conda_forge_paths_url}/path_to_artifacts/find_files.json",
+            f"{app_config().conda_forge_paths_url.unicode_string().rstrip('/')}"
+            "/path_to_artifacts/find_files.json",
             params={"path": query},
         )
     except Exception as exc:
@@ -50,7 +51,8 @@ def autocomplete_paths(query):
 
 def find_artifacts_by_path(path):
     r = requests.get(
-        f"{app_config().conda_forge_paths_url}/path_to_artifacts/find_artifacts.json",
+        f"{app_config().conda_forge_paths_url.unicode_string().rstrip('/')}"
+        "/path_to_artifacts/find_artifacts.json",
         params={"path": path},
     )
     r.raise_for_status()
