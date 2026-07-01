@@ -5,7 +5,7 @@ conda-package-streaming==0.12.0
 pip==26.1.2
 py-rattler==0.7.2
 pydantic==2.13.4
-pydantic-settings==2.14.1
+pydantic-settings==2.14.2
 streamlit==1.51.0
 streamlit-searchbox==0.1.20
 typing-extensions==4.15.0
