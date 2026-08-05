@@ -17,13 +17,13 @@ classifiers = [
 requires-python = ">=3.12"
 
 dependencies = [
+  "backports.zstd>=1,<2",
   "pydantic-settings>=2.4.0,<3",
   "pydantic>=2.8.2,<3",
   "typing-extensions>=4.12.2,<5",
-  "zstandard>=0.23.0,<0.24",
-  "py-rattler>=0.7.0,<0.8",
-  "conda-forge-metadata>=0.12.0,<0.13",
-  "conda-package-streaming>=0.12.0,<0.13",
+  "py-rattler>=0.25.0,<0.26",
+  "conda-forge-metadata>=0.16.0,<0.17",
+  "conda-package-streaming>=0.13.0,<0.14",
   "conda-oci-mirror>=0.2.3,<0.3",
   "streamlit==1.51.0",
   "streamlit-searchbox==0.1.20",
