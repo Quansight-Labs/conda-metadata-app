@@ -16,10 +16,10 @@ postinstall-production = "pip install --no-deps --disable-pip-version-check dist
 [dependencies]
 python = "3.12.*"
 pip = "*"
+"backports.zstd" = ">=1,<2"
 pydantic-settings = ">=2.4.0,<3"
 pydantic = ">=2.8.2,<3"
 typing-extensions = ">=4.12.2,<5"
-zstandard = ">=0.23.0,<0.24"
 py-rattler = ">=0.25.0,<0.26"
 conda-forge-metadata = ">=0.16.0,<0.17"
 conda-package-streaming = ">=0.13.0,<0.14"
