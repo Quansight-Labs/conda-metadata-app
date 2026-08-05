@@ -10,6 +10,7 @@ import json
 import mimetypes
 import os
 import re
+import sys
 import typing
 from collections import defaultdict
 from contextlib import closing
@@ -20,7 +21,11 @@ from io import StringIO
 from tempfile import gettempdir
 from typing import Any
 
-import zstandard as zstd
+if sys.version_info >= (3, 14):
+    from compression import zstd
+else:
+    from backports import zstd
+
 from conda_forge_metadata.types import ArtifactData
 from rattler.match_spec import MatchSpec
 from rattler.platform import PlatformLiteral
