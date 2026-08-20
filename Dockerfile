@@ -10,7 +10,7 @@ RUN ./docker/install.sh
 
 FROM ubuntu:24.04 AS production
 
-COPY --from=build /app/.pixi/envs/default /app/.pixi/envs/default
+COPY --from=build /app/.pixi/envs/prod /app/.pixi/envs/prod
 COPY --from=build /app/app.py /app
 COPY --from=build /app/app_config.toml /app
 COPY --from=build /app/version_info.json /app

@@ -34,11 +34,17 @@ hatchling = "*"
 postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ."
 build-wheel = "python -m build --no-isolation --wheel ."
 
-[feature.dev.dependencies]
-pixi-pycharm = ">=0.0.6,<0.0.7"
+[feature.test.dependencies]
+pixi-pycharm = "*"
+pytest = "*"
+pytest-cov = "*"
+
+[feature.test.tasks]
+test = "python -m pytest"
+test-coverage = "python -m pytest --cov=conda_metadata_app --cov-report=term-missing"
 
 [environments]
 # includes default feature
-default = []
+default = { features = ["test"], solve-group = "prod" }
 build = ["build"]
-dev = { features = ["dev"], no-default-feature = true }
+prod = { features = [], solve-group = "prod" }

@@ -3,10 +3,10 @@
 set -eux
 
 pixi run -e build build-wheel
-pixi install -e default --locked
-pixi run -e default postinstall-production
+pixi install -e prod --locked
+pixi run -e prod postinstall-production
 echo "#!/bin/sh" > /entrypoint.sh
-pixi shell-hook -e default -s bash >> /entrypoint.sh
+pixi shell-hook -e prod -s bash >> /entrypoint.sh
 echo 'exec "$@"' >> /entrypoint.sh
 
-pixi run -e default save-version-info
+pixi run -e prod save-version-info
