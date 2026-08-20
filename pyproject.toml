@@ -36,6 +36,9 @@ repository = "https://github.com/Quansight-Labs/conda-metadata-app"
 target-version = "py312"
 line-length = 99
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.ruff.lint]
 # E, W = pycodestyle errors and warnings
 # F = pyflakes

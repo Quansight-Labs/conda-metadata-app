@@ -10,7 +10,6 @@ import json
 import mimetypes
 import os
 import re
-import sys
 import typing
 from collections import defaultdict
 from contextlib import closing
@@ -20,11 +19,6 @@ from inspect import cleandoc
 from io import StringIO
 from tempfile import gettempdir
 from typing import Any
-
-if sys.version_info >= (3, 14):
-    from compression import zstd
-else:
-    from backports import zstd
 
 from conda_forge_metadata.types import ArtifactData
 from rattler.match_spec import MatchSpec
@@ -43,6 +37,7 @@ from conda_metadata_app.app_config import (
 )
 from conda_metadata_app.version_info import get_version_info
 from conda_metadata_app.version_order import VersionOrder
+from conda_metadata_app.zstd_compat import load_zstd_json
 
 if not os.environ.get("CACHE_DIR"):
     from conda_oci_mirror import defaults
@@ -227,9 +222,7 @@ def _download_compressed_repodata(channel_name: str, arch_subdir: str) -> dict |
             return None
         r.raise_for_status()
 
-        dctx = zstd.ZstdDecompressor()
-        with dctx.stream_reader(r.raw) as reader:
-            return json.load(reader)
+        return load_zstd_json(r.raw)
 
 
 @st.cache_resource(ttl="15m", max_entries=50)

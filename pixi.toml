@@ -37,8 +37,17 @@ build-wheel = "python -m build --no-isolation --wheel ."
 [feature.dev.dependencies]
 pixi-pycharm = ">=0.0.6,<0.0.7"
 
+[feature.test.dependencies]
+pytest = "*"
+pytest-cov = "*"
+
+[feature.test.tasks]
+test = "python -m pytest"
+test-coverage = "python -m pytest --cov=conda_metadata_app --cov-report=term-missing"
+
 [environments]
 # includes default feature
 default = []
 build = ["build"]
 dev = { features = ["dev"], no-default-feature = true }
+test = ["test"]
