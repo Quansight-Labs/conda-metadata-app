@@ -16,7 +16,6 @@ postinstall-production = "pip install --no-deps --disable-pip-version-check dist
 [dependencies]
 python = "3.12.*"
 pip = "*"
-pixi-pycharm = ">=0.0.12,<0.0.13"
 "backports.zstd" = ">=1,<2"
 pydantic-settings = ">=2.4.0,<3"
 pydantic = ">=2.8.2,<3"
@@ -36,6 +35,7 @@ postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-
 build-wheel = "python -m build --no-isolation --wheel ."
 
 [feature.test.dependencies]
+pixi-pycharm = "*"
 pytest = "*"
 pytest-cov = "*"
 
