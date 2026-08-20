@@ -47,7 +47,7 @@ test-coverage = "python -m pytest --cov=conda_metadata_app --cov-report=term-mis
 
 [environments]
 # includes default feature
-default = []
+default = { features = ["test"], solve-group = "prod" }
 build = ["build"]
 dev = { features = ["dev"], no-default-feature = true }
-test = ["test"]
+prod = { features = [], solve-group = "prod" }

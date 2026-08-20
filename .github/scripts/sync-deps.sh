@@ -6,4 +6,4 @@
 set -euo pipefail
 
 echo "# this file is auto-generated, please make changes in pixi.toml instead" > requirements.txt
-pixi list -e default --explicit --json | jq -r '.[] | select(.name != "python") | "\(.name)==\(.version)"' >> requirements.txt
+pixi list -e prod --explicit --json | jq -r '.[] | select(.name != "python") | "\(.name)==\(.version)"' >> requirements.txt
