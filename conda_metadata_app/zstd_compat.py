@@ -10,7 +10,12 @@ else:
     from backports import zstd
 
 
-def load_zstd_json(stream: BinaryIO) -> Any:
+def load_zstd_json(stream: BinaryIO) -> dict[str, Any]:
     """Load JSON from a Zstandard-compressed binary stream."""
     with zstd.open(stream, mode="rb") as reader:
-        return json.load(reader)
+        data = json.load(reader)
+
+    if not isinstance(data, dict):
+        raise ValueError("Expected a JSON object")
+
+    return data

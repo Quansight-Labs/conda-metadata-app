@@ -2,6 +2,8 @@ import json
 import sys
 from io import BytesIO
 
+import pytest
+
 if sys.version_info >= (3, 14):
     from compression import zstd
 else:
@@ -20,3 +22,10 @@ def test_loads_json_from_compressed_stream() -> None:
     actual = load_zstd_json(BytesIO(compressed))
 
     assert actual == expected
+
+
+def test_rejects_non_object_json() -> None:
+    compressed = zstd.compress(json.dumps(["not", "repodata"]).encode())
+
+    with pytest.raises(ValueError, match="Expected a JSON object"):
+        load_zstd_json(BytesIO(compressed))
