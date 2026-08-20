@@ -16,6 +16,7 @@ postinstall-production = "pip install --no-deps --disable-pip-version-check dist
 [dependencies]
 python = "3.12.*"
 pip = "*"
+pixi-pycharm = ">=0.0.12,<0.0.13"
 "backports.zstd" = ">=1,<2"
 pydantic-settings = ">=2.4.0,<3"
 pydantic = ">=2.8.2,<3"
@@ -34,9 +35,6 @@ hatchling = "*"
 postinstall = "pip install --no-build-isolation --no-deps --disable-pip-version-check -e ."
 build-wheel = "python -m build --no-isolation --wheel ."
 
-[feature.dev.dependencies]
-pixi-pycharm = ">=0.0.6,<0.0.7"
-
 [feature.test.dependencies]
 pytest = "*"
 pytest-cov = "*"
@@ -49,5 +47,4 @@ test-coverage = "python -m pytest --cov=conda_metadata_app --cov-report=term-mis
 # includes default feature
 default = { features = ["test"], solve-group = "prod" }
 build = ["build"]
-dev = { features = ["dev"], no-default-feature = true }
 prod = { features = [], solve-group = "prod" }
