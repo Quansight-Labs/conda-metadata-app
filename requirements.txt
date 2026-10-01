@@ -1,12 +1,12 @@
 # this file is auto-generated, please make changes in pixi.toml instead
-backports.zstd==1.6.0
+backports.zstd==1.7.0
 conda-forge-metadata==0.16.1
 conda-oci-mirror==0.2.3
 conda-package-streaming==0.13.0
 pip==26.2.1
 py-rattler==0.25.0
-pydantic==2.13.4
-pydantic-settings==2.14.2
+pydantic==2.13.5
+pydantic-settings==2.15.0
 streamlit==1.51.0
 streamlit-searchbox==0.1.20
 typing-extensions==4.16.0
