@@ -721,13 +721,24 @@ def artifact_metadata(channel: str, subdir: str, artifact: str) -> ArtifactData 
 
     if channel_config.metadata_retrieval == MetadataRetrieval.OCI_WITH_STREAMED_FALLBACK:
         # OCI requests are never authenticated for now
-        metadata = get_artifact_info_as_json(
-            channel=channel,
-            subdir=subdir,
-            artifact=artifact,
-            backend="oci",
-            skip_files_suffixes=(),
-        )
+        try:
+            metadata = get_artifact_info_as_json(
+                channel=channel,
+                subdir=subdir,
+                artifact=artifact,
+                backend="oci",
+                skip_files_suffixes=(),
+            )
+        except Exception as exc:
+            logger.warning(
+                "OCI fetch failed for %s/%s/%s: %s",
+                channel,
+                subdir,
+                artifact,
+                exc.message,
+                exc_info=exc,
+            )
+            metadata = None
 
         if (metadata and metadata.get("name")) or artifact.endswith(".tar.bz2"):
             return metadata
